@@ -1,0 +1,16 @@
+isdsbr:
+  collections:
+    theses_dissertations:
+      label: Theses and Dissertations
+      query: q=RELS_EXT_hasModel_uri_ms%3A%22info%3Afedora%2Fir%3AthesisCModel%22%0Amods_genre_s%3A%22Thesis+%2F+Dissertation%22
+  fedora:
+    admin_pass: xxxxxxxxxx
+    admin_user: xxxxxxxxxx
+    export_format: info:fedora/fedora-system:ATOMZip-1.1
+    fedora_home: /usr/share/fedora
+    hostname: chimera.hil.unb.ca
+    java_home: /usr/lib/jvm/java-7-oracle-amd64
+  solr:
+    hostname: chimera.hil.unb.ca
+    core: core1
+    uri: http://localhost:8080/solr

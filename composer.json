@@ -1,0 +1,32 @@
+{
+  "license": "MIT",
+  "name": "unb-libraries/isdsbr",
+  "config": {
+    "preferred-install": {
+      "*": "dist"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+
+    "consolidation/robo": "^1.0",
+    "guzzlehttp/guzzle": "^6.3"
+  },
+  "authors": [
+    {
+      "name": "Jacob Sanford",
+      "email": "jsanford@unb.ca"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "UnbLibraries\\IslandoraDspaceBridge\\": "src"
+    }
+  },
+  "scripts": {
+    "post-update-cmd": [
+      "ln -sf bin/isdsbr ./isdsbr"
+    ]
+  }
+}
