@@ -11,7 +11,9 @@
   "require": {
 
     "consolidation/robo": "^1.0",
-    "guzzlehttp/guzzle": "^6.3"
+    "guzzlehttp/guzzle": "^6.3",
+    "ext-dom": "*",
+    "joshfraser/php-name-parser": "dev-master"
   },
   "authors": [
     {

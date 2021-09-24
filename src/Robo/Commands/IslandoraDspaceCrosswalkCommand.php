@@ -6,65 +6,135 @@ use DOMDocument;
 use Exception;
 use Robo\Robo;
 use Robo\Tasks;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Finder\Finder;
+use UnbLibraries\IslandoraDspaceBridge\AuthorTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\DateTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\DepartmentGrantorTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\SubjectTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\ThesisAdvisorTransformTrait;
 
 /**
  * Provides commands to convert Islandora exports into Simple Archive Format.
  */
 class IslandoraDspaceCrosswalkCommand extends Tasks {
 
+  use ElementTransformTrait;
+  use AuthorTransformTrait;
+  use ThesisAdvisorTransformTrait;
+  use LanguageTransformTrait;
+  use SubjectTransformTrait;
+  use DepartmentGrantorTransformTrait;
+  use DateTransformTrait;
+
   const EXPORT_DIR_IDENTIFIER = 'MODS.0.xml';
 
   /**
-   * @var array
+   * The MODS->DC field mapping definitions.
+   *
+   * @var string[]
    */
   protected $mappings = [];
 
   /**
-   * @var array
+   * The selected MODS->DC mapping style for this conversion.
+   *
+   * @var string
    */
   protected $mappingStyle = NULL;
 
   /**
+   * A list of MODS items to convert into Simple Archive Format.
+   *
    * @var array
    */
   protected $operations = [];
 
   /**
+   * The crawler of the current MODS XML item being converted.
+   *
+   * @var \Symfony\Component\DomCrawler\Crawler
+   */
+  protected $sourceItemCrawler = NULL;
+
+  /**
+   * The path to the current MODS XML file being converted.
+   *
+   * @var string
+   */
+  protected $sourceItemPath = NULL;
+
+  /**
+   * The path to the current MODS bundle being converted.
+   *
    * @var string
    */
   protected $sourcePath = NULL;
 
   /**
+   * The files written by the current MODS bundle being converted.
+   *
+   * @var string[]
+   */
+  protected $targetItemContents = [];
+
+  /**
+   * The number of MODS items that have been converted to Simple Archive Format.
+   *
+   * @var int
+   */
+  protected $targetItemCounter = 0;
+
+  /**
+   * The dublin_core element of the current DC XML item being converted.
+   *
+   * @var \DOMElement
+   */
+  protected $targetItemDcElement = NULL;
+
+  /**
+   * The path to the current DC XML being written.
+   *
+   * @var string
+   */
+  protected $targetItemTargetPath = NULL;
+
+  protected $targetItemElements = [];
+
+  /**
+   * A list of values for the current DC element being converted.
+   *
+   * @var string[]
+   */
+  protected $targetItemValues = [];
+
+  /**
+   * The current DC document being converted.
+   *
+   * @var DOMDocument
+   */
+  protected $targetItemXml = NULL;
+
+  /**
+   * The path to the current Simple Archive Format being written.
+   *
    * @var string
    */
   protected $targetPath = NULL;
-
-  protected $targetCollections = NULL;
-
-  protected $importItemPath = NULL;
-  protected $importItemCrawler = NULL;
-
-  protected $exportItemValues = NULL;
-  protected $exportItemTargetPath = NULL;
-  protected $exportItemCounter = 0;
-  protected $exportItemXml = NULL;
-  protected $exportItemDcElement = NULL;
-  protected $exportItemContents = [];
 
 
   /**
    * Convert an Islandora export to DSpace Simple Import Format.
    *
    * @param string $source_path
-   *   The path to export the objects to.
+   *   The path to import the Islandora items from.
    * @param string $target_path
-   *   The path to export the objects to.
+   *   The path to export the Simple Import Format items to.
    * @param string $style
-   *   The mapping style to use when converting MODS to Dublin Core.
-   * @param string $target_collections
-   *   The target collections for the import. First listed owns item.
+   *   The MODS->DC mapping style to use when converting MODS to Dublin Core.
    *
    * @option yes
    *   Assume a yes response for all prompts.
@@ -73,44 +143,61 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    *
    * @command isdsbr:convert
    */
-  public function islandoraExportConvertToDspaceImport($source_path, $target_path, $style, $target_collections, $options = ['yes' => FALSE]) {
+  public function islandoraExportConvertToDspaceImport($source_path, $target_path, $style, $options = ['yes' => FALSE]) {
     $this->sourcePath = $source_path;
     $this->targetPath = $target_path;
-    $this->mappings = Robo::Config()->get('isdsbr.mappings');
-    $this->mappingStyle = $this->mappings[$style];
-    $this->targetCollections = $target_collections;
-
+    $this->setupStyle($style);
     $this->initOperations();
     $this->setUpOperations();
     $this->generateDspaceImports();
   }
 
-  private function setExportItemTargetPath() {
-    $padded_counter_string = str_pad($this->exportItemCounter,4,'0',STR_PAD_LEFT);
-    $this->exportItemTargetPath = $this->targetPath . "/item_$padded_counter_string";
-    mkdir($this->exportItemTargetPath, 0755);
+  private function setupStyle($style) {
+    $this->mappings = Robo::Config()->get('isdsbr.mappings');
+    if (empty($this->mappings[$style])) {
+      throw new Exception(
+        sprintf(
+          'Invalid style specified, valid styles are: %s',
+          implode(', ', array_keys($this->mappings))
+        )
+      );
+    }
+    $this->mappingStyle = $this->mappings[$style];
+  }
+
+  private function setTargetItemTargetPath() {
+    $padded_counter_string = str_pad($this->targetItemCounter,4,'0',STR_PAD_LEFT);
+    $this->targetItemTargetPath = $this->targetPath . "/item_$padded_counter_string";
+    mkdir($this->targetItemTargetPath, 0755);
   }
 
   private function generateDspaceImports() {
+    $progress_bar = new ProgressBar($this->output, count($this->operations));
+    $progress_bar->setFormat('Converting Objects : %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
+    $progress_bar->start();
+
     foreach ($this->operations as $operation) {
-      $this->importItemPath = $operation;
-      $this->setExportItemTargetPath();
-      $this->setUpExportItem();
+      $this->sourceItemPath = $operation;
+      $this->setTargetItemTargetPath();
+      $this->setUpTargetItem();
 
       foreach ($this->mappingStyle['elements'] as $map_element) {
-        $this->setExportItemValues($map_element);
-        $this->createDCItems($map_element);
+        $this->setTargetItemElements($map_element);
+        // If there aren't any actual values, do not create elements.
+        if (!empty($this->targetItemValues)) {
+          $this->createDCItems($map_element);
+        }
       }
-
-      $this->writeExportItemFile();
+      $this->writeTargetItemFile();
       $this->writeItemFiles();
-      $this->exportItemCounter++;
+      $progress_bar->advance();
+      $this->targetItemCounter++;
     }
+    $progress_bar->finish();
   }
 
   private function writeItemFiles() {
-    $this->exportItemContents = [];
-    $this->writeCollectionFile();
+    $this->targetItemContents = [];
     $this->writePDFFile();
     $this->writeContentsFile();
   }
@@ -120,51 +207,44 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   }
 
   private function writeContentsFile() {
-    if (!empty($this->exportItemContents)) {
-      $contents_filename = "{$this->exportItemTargetPath}/contents";
-      file_put_contents($contents_filename, implode("\n", $this->exportItemContents));
+    if (!empty($this->targetItemContents)) {
+      $contents_filename = "{$this->targetItemTargetPath}/contents";
+      file_put_contents($contents_filename, implode("\n", $this->targetItemContents));
     }
   }
 
   private function copyItemFile($source_name, $target_name, $identifier = NULL) {
-    if (file_exists($this->importItemPath . "/$source_name")) {
+    if (file_exists($this->sourceItemPath . "/$source_name")) {
       copy (
-        $this->importItemPath . "/$source_name",
-        $this->exportItemTargetPath . "/$target_name"
+        $this->sourceItemPath . "/$source_name",
+        $this->targetItemTargetPath . "/$target_name"
       );
-      $this->exportItemContents[] = $target_name.$identifier;
+      $this->targetItemContents[] = $target_name.$identifier;
     }
   }
 
-  private function writeCollectionFile() {
-    $output_file = $this->exportItemTargetPath . '/collection';
-    file_put_contents($output_file, $this->targetCollections);
+  private function setUpTargetItem() {
+    $this->sourceItemCrawler = new Crawler(file_get_contents($this->sourceItemPath . '/MODS.0.xml'));
+    $this->targetItemXml = new DomDocument('1.0', 'UTF-8');
+    $this->targetItemDcElement = $this->targetItemXml->createElement('dublin_core');
   }
 
-  private function setUpExportItem() {
-    $this->importItemCrawler = new Crawler(file_get_contents($this->importItemPath . '/MODS.0.xml'));
-    $this->exportItemXml = new DomDocument('1.0', 'UTF-8');
-    $this->exportItemDcElement = $this->exportItemXml->createElement('dublin_core');
-  }
-
-  private function writeExportItemFile() {
-    $this->exportItemXml->formatOutput = TRUE;
-    $output_file = $this->exportItemTargetPath . '/dublin_core.xml';
-    file_put_contents($output_file, $this->exportItemXml->saveXML());
+  private function writeTargetItemFile() {
+    $this->targetItemXml->formatOutput = TRUE;
+    $output_file = $this->targetItemTargetPath . '/dublin_core.xml';
+    file_put_contents($output_file, $this->targetItemXml->saveXML());
   }
 
   /**
    * @param $map_element
    */
-  private function setExportItemValues($map_element) {
-    $this->exportItemValues = [];
+  private function setTargetItemElements($map_element) {
+    $this->targetItemElements = [];
+    $this->targetItemValues = [];
     foreach ($map_element['source_paths'] as $source_path) {
-      $elements = $this->importItemCrawler->filterXPath($source_path);
+      $elements = $this->sourceItemCrawler->filterXPath($source_path);
       foreach ($elements as $element) {
-        $text_content = $element->textContent;
-        if (!empty($text_content)) {
-          $this->exportItemValues[] = $text_content;
-        }
+        $this->targetItemElements[] = $element;
       }
     }
     // Values callback.
@@ -177,28 +257,30 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    * @param $map_item
    */
   private function createDCItems(&$map_item) {
-    $prev_node = $this->exportItemDcElement;
+    $prev_node = $this->targetItemDcElement;
     $last_path_key = array_key_last($map_item['target_path']);
+
     foreach ($map_item['target_path'] as $path_key => $path) {
+      // Make sure we have (at minimum) an empty attrs array for this path.
+      $path['attributes'] = $path['attributes'] ?? [];
+
       if ($path_key == $last_path_key) {
-
-
-        // If this key already exists, we should add another anyhow.
-        foreach ($this->exportItemValues as $value) {
-          $new_node = $this->exportItemXml->createElement($path['name']);
+        // This is where the value lives - add new elements each time.
+        foreach ($this->targetItemValues as $value) {
+          $new_node = $this->targetItemXml->createElement($path['name']);
           foreach ($path['attributes'] as $attribute_name => $attribute_value) {
             $new_node->setAttribute($attribute_name, $attribute_value);
           }
-          $new_node->nodeValue = $value;
+          $new_node->nodeValue = htmlspecialchars($value);
           $prev_node->appendChild($new_node);
         }
       }
       else {
-        // This is not the value item and may be be an existing node!
+        // This is not the value item, try to grab an existing element.
         $prev_node = $this->createGetElement($prev_node, $path['name'], $path['attributes']);
       }
     }
-    $this->exportItemXml->appendChild($this->exportItemDcElement);
+    $this->targetItemXml->appendChild($this->targetItemDcElement);
   }
 
   /**
@@ -223,28 +305,14 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
       }
     }
 
-    $new_node = $this->exportItemXml->createElement($name);
-    foreach ($attrs as $attribute_name => $attribute_value) {
-      $new_node->setAttribute($attribute_name, $attribute_value);
+    $new_node = $this->targetItemXml->createElement($name);
+    if (!empty($attrs)) {
+      foreach ($attrs as $attribute_name => $attribute_value) {
+        $new_node->setAttribute($attribute_name, $attribute_value);
+      }
     }
     $parent_node->appendChild($new_node);
     return $new_node;
-  }
-
-  /**
-   * @param $node
-   * @param $name
-   * @param $attrs
-   *
-   * @return mixed|null
-   */
-  private function searchChildElementsByName($node, $name, $attrs) {
-    foreach ($node->childNodes as $child ) {
-      if ( $child->nodeName == $name ) {
-        return $child;
-      }
-    }
-    return NULL;
   }
 
   private function initOperations() {
@@ -266,8 +334,28 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     }
   }
 
-  private function transformModsTitle() {
-    // $this->exportItemValues
+  function getDoc($s) {
+    $doc = new DOMDocument;
+    $doc->loadxml($s);
+    return $doc;
+  }
+
+  function getStylesheetData() {
+    return <<< eox
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:output method="xml" version="1.0" encoding="iso-8859-1" indent="yes"/>
+<xsl:strip-space elements="*" />
+<xsl:template match="@* | node()">
+    <xsl:copy>
+        <xsl:copy-of select="@*"/>
+        <xsl:apply-templates select="node()">
+            <xsl:sort select="name()"/>
+        </xsl:apply-templates>
+    </xsl:copy>
+</xsl:template>
+</xsl:stylesheet>   
+eox;
   }
 
 }

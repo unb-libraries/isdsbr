@@ -12,8 +12,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 class IslandoraRepositoryExportCommand extends Tasks {
 
-  // const SOLR_INT_MAX = 2147483647;
-  const SOLR_INT_MAX = 5;
+  const SOLR_INT_MAX = 2147483647;
+  // const SOLR_INT_MAX = 5;
 
   const PROGRESS_BAR_FORMAT = '';
 
@@ -21,6 +21,11 @@ class IslandoraRepositoryExportCommand extends Tasks {
    * @var array
    */
   protected $operations = [];
+
+  /**
+   * @var array
+   */
+  protected $needManualCopy = [];
 
   /**
    * @var string
@@ -143,17 +148,36 @@ class IslandoraRepositoryExportCommand extends Tasks {
 
       foreach ($operation['pid_list'] as $pid) {
         $export_file = $this->exportIslandoraItem($pid, $operation);
-        $local_tmp_path = $this->transferExtractObjectArchive($export_file);
-        $item_write_path = "$operation_export_path/$pid";
-        if (!file_exists($item_write_path)) {
-          mkdir($item_write_path, 0777, TRUE);
+        $file_info = pathinfo($export_file);
+        $temp_dir = $this->tempdir();
+        $archive_path = "$temp_dir/{$file_info['filename']}";
+        $this->transferObjectArchive($export_file, $archive_path);
+
+        if (file_exists($archive_path) && filesize($archive_path)) {
+          $local_tmp_path = $this->extractObjectArchive($archive_path, $temp_dir);
+          $item_write_path = "$operation_export_path/$pid";
+          if (!file_exists($item_write_path)) {
+            mkdir($item_write_path, 0777, TRUE);
+          }
+          $this->xcopy($local_tmp_path, $item_write_path);
+          file_put_contents("$item_write_path/PID", $pid);
+          $this->delTree($local_tmp_path);
+        } else {
+          $this->needManualCopy[] = $pid;
         }
-        $this->xcopy($local_tmp_path, $item_write_path);
-        file_put_contents("$item_write_path/PID", $pid);
-        $this->delTree($local_tmp_path);
+
         $progress_bar->advance();
       }
       $progress_bar->finish();
+      if (!empty($this->needManualCopy)) {
+        $this->io()->newLine();
+        $this->io()->title('Issues Detected!');
+        $this->say("Some items failed to export correctly. PDF.0.pdf and MODS.0.xml for each item will need to be created in {$this->exportPath} manually.");
+        foreach ($this->needManualCopy as $pid) {
+          $this->io()->text("https://unbscholar.lib.unb.ca/islandora/object/$pid/manage/datastreams");
+          $this->io()->newLine();
+        }
+      }
     }
 
   }
@@ -161,8 +185,8 @@ class IslandoraRepositoryExportCommand extends Tasks {
   /**
    * Delete an entire tree, including files.
    *
-   * @author      StackOverflow
-   * @link        https://stackoverflow.com/questions/4366730/how-do-i-check-if-a-string-contains-a-specific-word
+   * @author StackOverflow
+   * @link https://stackoverflow.com/questions/4366730/how-do-i-check-if-a-string-contains-a-specific-word
    *
    * @param $dir
    *
@@ -262,22 +286,21 @@ class IslandoraRepositoryExportCommand extends Tasks {
     return $this->generateExportArchive($pid);
   }
 
-  private function transferExtractObjectArchive($export_file) {
-    $file_info = pathinfo($export_file);
-    $temp_dir = $this->tempdir();
-    $archive_path = "$temp_dir/{$file_info['filename']}";
+  private function transferObjectArchive($export_file, $archive_path) {
     $this->taskRsync()
       ->fromPath("chimera:$export_file")
       ->toPath($archive_path)
       ->silent(TRUE)
       ->run();
+  }
 
+  private function extractObjectArchive($archive_path, $temp_dir) {
     $zip = new \ZipArchive;
     if ($zip->open($archive_path) === TRUE) {
       $zip->extractTo($temp_dir);
       $zip->close();
     } else {
-      echo 'failed';
+      $this->needManualCopy[] = $archive_path;
     }
     unlink($archive_path);
     return($temp_dir);

@@ -6,325 +6,171 @@ use Exception;
 use Robo\Robo;
 use Robo\Tasks;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Finder\Finder;
 
 /**
  * Provides commands to import  from Islandora/Fedora based on a solr query.
  */
 class DspaceImportCommand extends Tasks {
 
-  // const SOLR_INT_MAX = 2147483647;
-  const SOLR_INT_MAX = 5;
-
   const PROGRESS_BAR_FORMAT = '';
-
-  /**
-   * @var array
-   */
-  protected $operations = [];
+  const EXPORT_DIR_IDENTIFIER = 'dublin_core.xml';
+  const IMPORT_ZIP_PATH = '/tmp';
+  const IMPORT_LOCAL_MAP_PATH = 'import_maps';
+  const DSPACE_BIN_PATH = '/dspace/bin/dspace';
 
   /**
    * @var string
    */
-  protected $exportPath = NULL;
+  protected $importPath = NULL;
+  protected $dspacePodId = NULL;
+  protected $dspacePodNamespace = NULL;
+  protected $dspaceCollection = NULL;
+  protected $importTimeStamp = NULL;
+  protected $importZipFilePath = NULL;
+  protected $importZipFileName = NULL;
+  protected $importMapFileName = NULL;
+  protected $importLocalMapPath = NULL;
 
   /**
-   * Export objects from Islandora/Fedora based on a solr query.
+   * Import objects from a simple archive format tree to DSpace.
    *
    * @param string $path
-   *   The path to export the objects to.
+   *   The path to the Simple Archive Format tree.
+   * @param string $kubectl_pod_id
+   *   The DSpace pod ID to target
+   * @param string $kubectl_deployment_env
+   *   The DSpace deployment environment
+   * @param string $dspace_collection
+   *   The DSpace collection to import to
    *
    * @option yes
    *   Assume a yes response for all prompts.
    *
    * @throws \Exception
    *
-   * @command isdsbr:backup:local
+   * @command isdsbr:import
    */
-  public function islandoraRepositoryBackupToLocal($path, $options = ['yes' => FALSE]) {
-    $this->initExport($path);
-    $this->setUpOperations();
-    $this->exportObjects();
+  public function dspaceImportData($path, $kubectl_pod_id, $kubectl_deployment_env, $dspace_collection, $opts = ['yes' => FALSE]) {
+    $this->importPath = $path;
+    $this->dspacePodNamespace = $kubectl_deployment_env;
+    $this->dspacePodId = $kubectl_pod_id;
+    $this->dspaceCollection = $dspace_collection;
+    $this->importTimeStamp = time();
+    $this->importZipFileName = "isdsbr_{$this->importTimeStamp}.zip";
+    $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/{$this->importZipFileName}";
+    $this->importMapFileName = 'dspace_import_map_' . $this->importTimeStamp . '.txt';
+    $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
+    
+    $this->initImport();
+    $this->validateImportFolder();
+    $this->zipImportFolder();
+    $this->copyZipToContainer();
+    $this->importContainerZip();
+    $this->copyMapFile();
   }
+
+  /**
+   * Revert a previously imported set of data using a local mapfile.
+   *
+   * @param string $timestamp
+   *   The timestamp of the import to revert.
+   * @param string $kubectl_pod_id
+   *   The DSpace pod ID to target
+   * @param string $kubectl_deployment_env
+   *   The DSpace deployment environment
+   *
+   * @option yes
+   *   Assume a yes response for all prompts.
+   *
+   * @throws \Exception
+   *
+   * @command isdsbr:import:revert
+   */
+  public function dspaceRevertImport($timestamp, $kubectl_pod_id, $kubectl_deployment_env, $opts = ['yes' => FALSE]) {
+    $this->dspacePodNamespace = $kubectl_deployment_env;
+    $this->dspacePodId = $kubectl_pod_id;
+    $this->importTimeStamp = $timestamp;
+    $this->importMapFileName = 'dspace_import_map_' . $this->importTimeStamp . '.txt';
+    $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
+    $this->copyMapFileToContainer();
+    $this->revertImport();
+  }
+
+  private function revertImport() {
+    $this->io()->title('Reverting Import');
+    $dspace_bin = self::DSPACE_BIN_PATH;
+    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --eperson=dspaceadmin@unb.ca -d -m /tmp/{$this->importMapFileName}";
+    $this->say($cmd);
+    passthru($cmd);
+  }
+
+  private function copyMapFileToContainer() {
+    $this->io()->title('Copying Map File To Local');
+    $cmd = "kubectl cp {$this->importLocalMapPath}/{$this->importMapFileName} {$this->dspacePodId}:/tmp/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
+    $this->say($cmd);
+    passthru($cmd);
+  }
+
 
   /**
    * @param $path
    *
    * @throws \Exception
    */
-  private function initExport($path) {
-    $this->exportPath = $path;
-    if ( $this->exportPath == NULL || !is_writable($this->exportPath)) {
+  private function initImport() {
+    if ($this->importPath == NULL || !is_writable($this->importPath)) {
       throw new Exception(
         sprintf(
-          'The specified export path, %s is not writable',
-          $path
+          'The specified import path, %s is not writable',
+          $this->importPath
         )
       );
     }
   }
 
-  /**
-   *
-   */
-  private function setUpOperations() {
-    $this->doObjectDiscovery();
-  }
-
-  private function doObjectDiscovery() {
-    $this->io()->title('Object Discovery');
-    $collections = Robo::Config()->get('isdsbr.collections');
-    foreach ($collections as $collection_id => $collection) {
-      $this->io()->text(
-        sprintf(
-          "[%s] Querying solr server for objects...",
-          $collection['label']
-        )
-      );
-      $this->operations[$collection_id] = [
-        'collection'=> $collection,
-        'pid_list' => $this->getPidsFromQuery($collection['query'])
-      ];
-      $this->io()->text(
-        sprintf(
-          "[%s] %s objects found and queued for export...",
-          $collection['label'],
-          count($this->operations[$collection_id]['pid_list'])
-        )
-      );
+  private function validateImportFolder() {
+    $finder = new Finder();
+    $finder->files()->in($this->importPath)->name(self::EXPORT_DIR_IDENTIFIER);
+    foreach ($finder as $file) {
+      return;
     }
-  }
-
-  private function getPidsFromQuery($query) {
-    $ssh_hostname = Robo::Config()->get('isdsbr.solr.hostname');
-    $query_uri = sprintf(
-      "%s/%s/select?%s&rows=%s&fl=PID&wt=csv&indent=true",
-      Robo::Config()->get('isdsbr.solr.uri'),
-      Robo::Config()->get('isdsbr.solr.core'),
-      $query,
-      self::SOLR_INT_MAX
-    );
-    $query_command = "curl \"$query_uri\"";
-    $this->io()->note(
+    throw new Exception(
       sprintf(
-        '[%s] %s',
-        $ssh_hostname,
-        $query_command
+        'The specified import path, %s does not appear to contain any items.',
+        $this->importPath
       )
     );
-    $query_result = $this->taskSshExec($ssh_hostname)
-      ->exec($query_command)
-      ->silent(TRUE)
-      ->run();
-    return $this->getPidsFromResult(
-      $query_result->getMessage()
-    );
   }
 
-  private function getPidsFromResult($result_string) {
-    $results = explode("\n", $result_string);
-    array_shift($results);
-    return $results;
+  private function zipImportFolder() {
+    $this->io()->title('Archiving Files Prior to Transfer');
+    $cmd = "cd {$this->importPath}; zip -r {$this->importZipFilePath} *";
+    $this->say($cmd);
+    passthru($cmd);
   }
 
-  private function exportObjects() {
-    $this->io()->title('Object Export');
-
-    foreach ($this->operations as $operation_idx => $operation) {
-      $collection = $operation['collection'];
-
-      $operation_export_path = $this->exportPath . "/$operation_idx";
-      if (!file_exists($operation_export_path)) {
-        mkdir($operation_export_path, 0777, TRUE);
-      }
-
-      $progress_bar = new ProgressBar($this->output, count($operation['pid_list']));
-      $progress_bar->setFormat('Exporting ' . $collection['label'] . ' Objects : %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
-      $progress_bar->start();
-
-      foreach ($operation['pid_list'] as $pid) {
-        $export_file = $this->exportIslandoraItem($pid, $operation);
-        $local_tmp_path = $this->transferExtractObjectArchive($export_file);
-        $item_write_path = "$operation_export_path/$pid";
-        if (!file_exists($item_write_path)) {
-          mkdir($item_write_path, 0777, TRUE);
-        }
-        $this->xcopy($local_tmp_path, $item_write_path);
-        file_put_contents("$item_write_path/PID", $pid);
-        $this->delTree($local_tmp_path);
-        $progress_bar->advance();
-      }
-      $progress_bar->finish();
-    }
-
+  private function copyZipToContainer() {
+    $this->io()->title('Copying Zip file to container');
+    $cmd = "kubectl --v=6 cp {$this->importZipFilePath} {$this->dspacePodId}:{$this->importZipFilePath} --namespace={$this->dspacePodNamespace}";
+    $this->say($cmd);
+    passthru($cmd);
   }
 
-  /**
-   * Delete an entire tree, including files.
-   *
-   * @author      StackOverflow
-   * @link        https://stackoverflow.com/questions/4366730/how-do-i-check-if-a-string-contains-a-specific-word
-   *
-   * @param $dir
-   *
-   * @return bool|null
-   */
-  public static function delTree($dir) {
-    if (strpos($dir, '/tmp') !== false) {
-      $files = array_diff(scandir($dir), ['.', '..']);
-      foreach ($files as $file) {
-        (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file");
-      }
-      return rmdir($dir);
-    }
-    return NULL;
+  private function importContainerZip() {
+    $this->io()->title('Importing Archive Format');
+    $dspace_bin = self::DSPACE_BIN_PATH;
+    $mapfile = '/tmp/' . $this->importMapFileName;
+    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --add --collection={$this->dspaceCollection} --eperson=dspaceadmin@unb.ca --source=" . self::IMPORT_ZIP_PATH . " --zip={$this->importZipFileName} --mapfile=$mapfile";
+    $this->say($cmd);
+    passthru($cmd);
   }
 
-
-  /**
-   * Copy a file, or recursively copy a folder and its contents
-   * @author      Aidan Lister <aidan@php.net>
-   * @version     1.0.1
-   * @link        http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
-   * @param       string   $source    Source path
-   * @param       string   $dest      Destination path
-   * @param       int      $permissions New folder creation permissions
-   * @return      bool     Returns true on success, false on failure
-   */
-  /**
-   * Copy files from one directory to another, recursively.
-   *
-   * @author      Aidan Lister <aidan@php.net>
-   * @link        http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
-   *
-   * @param $source
-   * @param $dest
-   * @param int $permissions
-   *
-   * @return bool
-   */
-  function xcopy($source, $dest, $permissions = 0755) {
-    $sourceHash = $this->hashDirectory($source);
-    // Check for symlinks
-    if (is_link($source)) {
-      return symlink(readlink($source), $dest);
-    }
-
-    // Simple copy for a file
-    if (is_file($source)) {
-      return copy($source, $dest);
-    }
-
-    // Make destination directory
-    if (!is_dir($dest)) {
-      mkdir($dest, $permissions);
-    }
-
-    // Loop through the folder
-    $dir = dir($source);
-    while (false !== $entry = $dir->read()) {
-      // Skip pointers
-      if ($entry == '.' || $entry == '..') {
-        continue;
-      }
-
-      // Deep copy directories
-      if($sourceHash != $this->hashDirectory($source."/".$entry)) {
-        $this->xcopy("$source/$entry", "$dest/$entry", $permissions);
-      }
-    }
-
-    // Clean up
-    $dir->close();
-    return true;
-  }
-
-  /**
-   * Copy a file, or recursively copy a folder and its contents
-   * @author      Aidan Lister <aidan@php.net>
-   * @version     1.0.1
-   * @link        http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
-   */
-  function hashDirectory($directory){
-    if (! is_dir($directory)){ return false; }
-    $files = array();
-    $dir = dir($directory);
-    while (false !== ($file = $dir->read())){
-      if ($file != '.' and $file != '..') {
-        if (is_dir($directory . '/' . $file)) { $files[] = $this->hashDirectory($directory . '/' . $file); }
-        else { $files[] = md5_file($directory . '/' . $file); }
-      }
-    }
-    $dir->close();
-    return md5(implode('', $files));
-  }
-
-  private function exportIslandoraItem($pid, $operation) {
-    return $this->generateExportArchive($pid);
-  }
-
-  private function transferExtractObjectArchive($export_file) {
-    $file_info = pathinfo($export_file);
-    $temp_dir = $this->tempdir();
-    $archive_path = "$temp_dir/{$file_info['filename']}";
-    $this->taskRsync()
-      ->fromPath("chimera:$export_file")
-      ->toPath($archive_path)
-      ->silent(TRUE)
-      ->run();
-
-    $zip = new \ZipArchive;
-    if ($zip->open($archive_path) === TRUE) {
-      $zip->extractTo($temp_dir);
-      $zip->close();
-    } else {
-      echo 'failed';
-    }
-    unlink($archive_path);
-    return($temp_dir);
-  }
-
-  private function generateExportArchive($pid) {
-    $export_command = sprintf(
-      'JAVA_HOME=%s FEDORA_HOME=%s ./fedora-export.sh localhost:8080 %s %s %s %s migrate /tmp http',
-      Robo::Config()->get('isdsbr.fedora.java_home'),
-      Robo::Config()->get('isdsbr.fedora.fedora_home'),
-      Robo::Config()->get('isdsbr.fedora.admin_user'),
-      Robo::Config()->get('isdsbr.fedora.admin_pass'),
-      $pid,
-      Robo::Config()->get('isdsbr.fedora.export_format')
-    );
-    $fedora_bin_dir = Robo::Config()->get('isdsbr.fedora.fedora_home') . '/client/bin';
-    $result = $this->taskSshExec(Robo::Config()->get('isdsbr.fedora.hostname'))
-      ->exec($export_command)
-      ->remoteDir($fedora_bin_dir)
-      ->forcePseudoTty()
-      ->silent(TRUE)
-      ->run();
-    return $this->getPathToArchive($result);
-  }
-
-  /**
-   * @param $result
-   *
-   * @return mixed
-   */
-  private function getPathToArchive($result) {
-    $message = $result->getMessage();
-    preg_match('/Exporting .* to (.*)/', $message, $matches);
-    return $matches[1];
-  }
-
-  /**
-   * @return false|string
-   *
-   * @throws \Exception
-   */
-  private function tempdir() {
-    $tempfile = tempnam(sys_get_temp_dir(),'');
-    if (file_exists($tempfile)) { unlink($tempfile); }
-    mkdir($tempfile);
-    if (is_dir($tempfile)) { return $tempfile; }
-    throw new Exception("Failure to create a temporary directory.");
+  private function copyMapFile() {
+    $this->io()->title('Copying Map File To Local');
+    $cmd = "kubectl cp {$this->dspacePodId}:/tmp/{$this->importMapFileName} {$this->importLocalMapPath}/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
+    $this->say($cmd);
+    passthru($cmd);
   }
 
 }
