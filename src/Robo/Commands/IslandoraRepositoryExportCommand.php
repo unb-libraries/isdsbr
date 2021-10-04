@@ -168,6 +168,10 @@ class IslandoraRepositoryExportCommand extends Tasks {
 
         $progress_bar->advance();
       }
+
+      // Write mapping format.
+      file_put_contents("$operation_export_path/field_map.txt", $operation['collection']['field_map']);
+
       $progress_bar->finish();
       if (!empty($this->needManualCopy)) {
         $this->io()->newLine();
