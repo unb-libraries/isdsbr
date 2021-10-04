@@ -78,7 +78,7 @@ class IslandoraRepositoryExportCommand extends Tasks {
   private function doObjectDiscovery() {
     $collections = Robo::Config()->get('isdsbr.collections');
     foreach ($collections as $collection_id => $collection) {
-      $this->io()->title('Object Discovery:' . $collection['label']);
+      $this->io()->title('Object Discovery: ' . $collection['label']);
       $this->io()->text(
         sprintf(
           "[%s] Querying solr server for objects...",
@@ -142,7 +142,7 @@ class IslandoraRepositoryExportCommand extends Tasks {
       }
 
       $progress_bar = new ProgressBar($this->output, count($operation['pid_list']));
-      $progress_bar->setFormat('Exporting ' . $collection['label'] . ' Objects : %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
+      $progress_bar->setFormat('%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
       $progress_bar->start();
 
       foreach ($operation['pid_list'] as $pid) {
@@ -171,9 +171,11 @@ class IslandoraRepositoryExportCommand extends Tasks {
       // Write mapping format.
       file_put_contents("$operation_export_path/field_map.txt", $operation['collection']['field_map']);
 
+      // Finish up.
       $progress_bar->finish();
-      $this->io()->newLine();
+      $this->io()->newLine(2);
 
+      // Report any issues.
       if (!empty($this->needManualCopy)) {
         $this->io()->newLine();
         $this->io()->title('Issues Detected!');

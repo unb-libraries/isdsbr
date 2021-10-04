@@ -209,8 +209,9 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    * @throws \Exception
    */
   private function generateDspaceImports() {
-    $this->setupProgressBar();
     foreach ($this->operations as $this->curOperationSourcePath => $operation_paths) {
+      $this->io()->title("Object Crosswalk: $this->curOperationSourcePath");
+      $this->setupProgressBar($operation_paths);
       $this->initCurImportOperation();
       foreach ($operation_paths as $this->curOperationItemSourcePath) {
         $this->setTargetItemTargetPath();
@@ -227,20 +228,17 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
         $this->crosswalkProgressBar->advance();
         $this->targetItemCounter++;
       }
+      $this->crosswalkProgressBar->finish();
+      $this->io()->newLine(2);
     }
-    $this->crosswalkProgressBar->finish();
   }
 
   /**
    * Sets up the progress bar for the conversion operation.
    */
-  private function setupProgressBar() {
-    $num_operations = 0;
-    foreach ($this->operations as $operation_paths) {
-      $num_operations += count($operation_paths);
-    }
-    $this->crosswalkProgressBar = new ProgressBar($this->output, $num_operations);
-    $this->crosswalkProgressBar->setFormat('Converting Objects : %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
+  private function setupProgressBar($operation_paths) {
+    $this->crosswalkProgressBar = new ProgressBar($this->output, count($operation_paths));
+    $this->crosswalkProgressBar->setFormat('%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
     $this->crosswalkProgressBar->start();
   }
 
