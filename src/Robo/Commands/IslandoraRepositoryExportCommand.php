@@ -76,9 +76,9 @@ class IslandoraRepositoryExportCommand extends Tasks {
   }
 
   private function doObjectDiscovery() {
-    $this->io()->title('Object Discovery');
     $collections = Robo::Config()->get('isdsbr.collections');
     foreach ($collections as $collection_id => $collection) {
+      $this->io()->title('Object Discovery:' . $collection['label']);
       $this->io()->text(
         sprintf(
           "[%s] Querying solr server for objects...",
@@ -132,10 +132,9 @@ class IslandoraRepositoryExportCommand extends Tasks {
   }
 
   private function exportObjects() {
-    $this->io()->title('Object Export');
-
     foreach ($this->operations as $operation_idx => $operation) {
       $collection = $operation['collection'];
+      $this->io()->title('Object Export: ' . $collection['label']);
 
       $operation_export_path = $this->exportPath . "/$operation_idx";
       if (!file_exists($operation_export_path)) {
@@ -173,6 +172,8 @@ class IslandoraRepositoryExportCommand extends Tasks {
       file_put_contents("$operation_export_path/field_map.txt", $operation['collection']['field_map']);
 
       $progress_bar->finish();
+      $this->io()->newLine();
+
       if (!empty($this->needManualCopy)) {
         $this->io()->newLine();
         $this->io()->title('Issues Detected!');
