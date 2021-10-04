@@ -232,7 +232,13 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     $this->sourceItemCrawler = new Crawler(file_get_contents($this->sourceItemPath . '/MODS.0.xml'));
     foreach ($this->files as $metadata_id => $metadata_file) {
       $this->files[$metadata_id]['xml'] = new DomDocument($metadata_file['xml-version'], $metadata_file['xml-encoding']);
-      $this->files[$metadata_id]['dcelement'] = $this->files[$metadata_id]['xml']->createElement('dublin_core');
+      $dc_element = $this->files[$metadata_id]['xml']->createElement('dublin_core');
+      if (!empty($metadata_file['schema'])) {
+        $schema_attribute = $this->files[$metadata_id]['xml']->createAttribute('schema');
+        $schema_attribute->value = $metadata_file['schema'];
+        $dc_element->appendChild($schema_attribute);
+      }
+      $this->files[$metadata_id]['dcelement'] = $dc_element;
     }
   }
 
