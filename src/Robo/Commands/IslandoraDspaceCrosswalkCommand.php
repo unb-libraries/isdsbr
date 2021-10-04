@@ -33,6 +33,13 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   const EXPORT_DIR_IDENTIFIER = 'MODS.0.xml';
 
   /**
+   * The output file configuration.
+   *
+   * @var object[]
+   */
+  protected $files = [];
+
+  /**
    * The MODS->DC field mapping definitions.
    *
    * @var string[]
@@ -89,13 +96,6 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   protected $targetItemCounter = 0;
 
   /**
-   * The dublin_core element of the current DC XML item being converted.
-   *
-   * @var \DOMElement
-   */
-  protected $targetItemDcElement = NULL;
-
-  /**
    * The path to the current DC XML being written.
    *
    * @var string
@@ -110,13 +110,6 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    * @var string[]
    */
   protected $targetItemValues = [];
-
-  /**
-   * The current DC document being converted.
-   *
-   * @var DOMDocument
-   */
-  protected $targetItemXml = NULL;
 
   /**
    * The path to the current Simple Archive Format being written.
@@ -146,10 +139,20 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   public function islandoraExportConvertToDspaceImport($source_path, $target_path, $style, $options = ['yes' => FALSE]) {
     $this->sourcePath = $source_path;
     $this->targetPath = $target_path;
+    $this->setupFiles();
     $this->setupStyle($style);
     $this->initOperations();
     $this->setUpOperations();
     $this->generateDspaceImports();
+  }
+
+  private function setupFiles() {
+    $this->files = Robo::Config()->get('isdsbr.files');
+    if (empty($this->files['dublin_core'])) {
+      throw new Exception(
+        'No dublin core filespec found in config.'
+      );
+    }
   }
 
   private function setupStyle($style) {
@@ -179,7 +182,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     foreach ($this->operations as $operation) {
       $this->sourceItemPath = $operation;
       $this->setTargetItemTargetPath();
-      $this->setUpTargetItem();
+      $this->setUpTargetItems();
 
       foreach ($this->mappingStyle['elements'] as $map_element) {
         $this->setTargetItemElements($map_element);
@@ -188,7 +191,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
           $this->createDCItems($map_element);
         }
       }
-      $this->writeTargetItemFile();
+      $this->writeTargetItemFiles();
       $this->writeItemFiles();
       $progress_bar->advance();
       $this->targetItemCounter++;
@@ -223,16 +226,20 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     }
   }
 
-  private function setUpTargetItem() {
+  private function setUpTargetItems() {
     $this->sourceItemCrawler = new Crawler(file_get_contents($this->sourceItemPath . '/MODS.0.xml'));
-    $this->targetItemXml = new DomDocument('1.0', 'UTF-8');
-    $this->targetItemDcElement = $this->targetItemXml->createElement('dublin_core');
+    foreach ($this->files as $metadata_id => $metadata_file) {
+      $this->files[$metadata_id]['xml'] = new DomDocument($metadata_file['xml-version'], $metadata_file['xml-encoding']);
+      $this->files[$metadata_id]['dcelement'] = $this->files[$metadata_id]['xml']->createElement('dublin_core');
+    }
   }
 
-  private function writeTargetItemFile() {
-    $this->targetItemXml->formatOutput = TRUE;
-    $output_file = $this->targetItemTargetPath . '/dublin_core.xml';
-    file_put_contents($output_file, $this->targetItemXml->saveXML());
+  private function writeTargetItemFiles() {
+    foreach ($this->files as $metadata_id => $metadata_file) {
+      $this->files[$metadata_id]['xml']->formatOutput = TRUE;
+      $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
+      file_put_contents($output_file, $this->files[$metadata_id]['xml']->saveXML());
+    }
   }
 
   /**
@@ -257,7 +264,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    * @param $map_item
    */
   private function createDCItems(&$map_item) {
-    $prev_node = $this->targetItemDcElement;
+    $prev_node = $this->files[$map_item['target_file']]['dcelement'];
     $last_path_key = array_key_last($map_item['target_path']);
 
     foreach ($map_item['target_path'] as $path_key => $path) {
@@ -267,7 +274,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
       if ($path_key == $last_path_key) {
         // This is where the value lives - add new elements each time.
         foreach ($this->targetItemValues as $value) {
-          $new_node = $this->targetItemXml->createElement($path['name']);
+          $new_node = $this->files[$map_item['target_file']]['xml']->createElement($path['name']);
           foreach ($path['attributes'] as $attribute_name => $attribute_value) {
             $new_node->setAttribute($attribute_name, $attribute_value);
           }
@@ -277,10 +284,10 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
       }
       else {
         // This is not the value item, try to grab an existing element.
-        $prev_node = $this->createGetElement($prev_node, $path['name'], $path['attributes']);
+        $prev_node = $this->createGetElement($prev_node, $path['name'], $path['attributes'], $map_item['target_file']);
       }
     }
-    $this->targetItemXml->appendChild($this->targetItemDcElement);
+    $this->files[$map_item['target_file']]['xml']->appendChild($this->files[$map_item['target_file']]['dcelement']);
   }
 
   /**
@@ -290,7 +297,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    *
    * @return mixed
    */
-  private function createGetElement(&$parent_node, $name, $attrs) {
+  private function createGetElement(&$parent_node, $name, $attrs, $file_id) {
     $existing = $this->searchChildElementsByName($parent_node, $name, $attrs);
     if (!empty($existing)) {
       $all_attr_match = TRUE;
@@ -305,7 +312,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
       }
     }
 
-    $new_node = $this->targetItemXml->createElement($name);
+    $new_node = $this->files[$file_id]['xml']->createElement($name);
     if (!empty($attrs)) {
       foreach ($attrs as $attribute_name => $attribute_value) {
         $new_node->setAttribute($attribute_name, $attribute_value);
