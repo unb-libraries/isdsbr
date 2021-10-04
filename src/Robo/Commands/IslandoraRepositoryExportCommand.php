@@ -12,8 +12,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 class IslandoraRepositoryExportCommand extends Tasks {
 
-  const SOLR_INT_MAX = 2147483647;
-  // const SOLR_INT_MAX = 5;
+  // const SOLR_INT_MAX = 2147483647;
+  const SOLR_INT_MAX = 5;
 
   const PROGRESS_BAR_FORMAT = '';
 

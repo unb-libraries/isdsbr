@@ -16,19 +16,21 @@ use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\SubjectTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ThesisAdvisorTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\ThesisTypeTransformTrait;
 
 /**
  * Provides commands to convert Islandora exports into Simple Archive Format.
  */
 class IslandoraDspaceCrosswalkCommand extends Tasks {
 
-  use ElementTransformTrait;
   use AuthorTransformTrait;
-  use ThesisAdvisorTransformTrait;
+  use DateTransformTrait;
+  use DepartmentGrantorTransformTrait;
+  use ElementTransformTrait;
   use LanguageTransformTrait;
   use SubjectTransformTrait;
-  use DepartmentGrantorTransformTrait;
-  use DateTransformTrait;
+  use ThesisAdvisorTransformTrait;
+  use ThesisTypeTransformTrait;
 
   const EXPORT_DIR_IDENTIFIER = 'MODS.0.xml';
 
