@@ -35,6 +35,27 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   const EXPORT_DIR_IDENTIFIER = 'MODS.0.xml';
 
   /**
+   * The console progress bar.
+   *
+   * @var object
+   */
+  protected $crosswalkProgressBar;
+
+  /**
+   * The current operation's item source path.
+   *
+   * @var string
+   */
+  protected $curOperationItemSourcePath;
+
+  /**
+   * The current operation source path.
+   *
+   * @var string
+   */
+  protected $curOperationSourcePath;
+
+  /**
    * The output file configuration.
    *
    * @var object[]
@@ -42,18 +63,18 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   protected $files = [];
 
   /**
-   * The MODS->DC field mapping definitions.
-   *
-   * @var string[]
-   */
-  protected $mappings = [];
-
-  /**
    * The selected MODS->DC mapping style for this conversion.
    *
    * @var string
    */
   protected $mappingStyle = NULL;
+
+  /**
+   * The MODS->DC field mapping definitions.
+   *
+   * @var string
+   */
+  protected $mapStyle;
 
   /**
    * A list of MODS items to convert into Simple Archive Format.
@@ -104,6 +125,11 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    */
   protected $targetItemTargetPath = NULL;
 
+  /**
+   * The elements of the target Item.
+   *
+   * @var string[]
+   */
   protected $targetItemElements = [];
 
   /**
@@ -128,8 +154,6 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    *   The path to import the Islandora items from.
    * @param string $target_path
    *   The path to export the Simple Import Format items to.
-   * @param string $style
-   *   The MODS->DC mapping style to use when converting MODS to Dublin Core.
    *
    * @option yes
    *   Assume a yes response for all prompts.
@@ -138,18 +162,137 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    *
    * @command isdsbr:convert
    */
-  public function islandoraExportConvertToDspaceImport($source_path, $target_path, $style, $options = ['yes' => FALSE]) {
+  public function islandoraExportConvertToDspaceImport($source_path, $target_path, $options = ['yes' => FALSE]) {
     $this->sourcePath = $source_path;
     $this->targetPath = $target_path;
-    $this->setupFiles();
-    $this->setupStyle($style);
     $this->initOperations();
     $this->setUpOperations();
     $this->generateDspaceImports();
   }
 
-  private function setupFiles() {
-    $this->files = Robo::Config()->get('isdsbr.files');
+  /**
+   * Initilializes the target path for conversion operations.
+   *
+   * @throws \Exception
+   */
+  private function initOperations() {
+    if ( $this->targetPath == NULL || !is_writable($this->targetPath)) {
+      throw new Exception(
+        sprintf(
+          'The specified target path, %s is not writable',
+          $this->targetPath
+        )
+      );
+    }
+  }
+
+  /**
+   * Sets up the list of operations (source items) to convert.
+   */
+  private function setUpOperations() {
+    $dir_finder = new Finder();
+    $dir_finder->directories()->in($this->sourcePath)->depth(1);
+    foreach ($dir_finder as $import_dir) {
+      $source_dir = $import_dir->getPath();
+      $this->operations[$source_dir] = [];
+      $finder = new Finder();
+      $finder->files()->in($source_dir)->name(self::EXPORT_DIR_IDENTIFIER);
+      foreach ($finder as $file) {
+        $this->operations[$source_dir][] = $file->getPath();
+      }
+    }
+  }
+
+  /**
+   * Generates the DSpace Simple Archive Format (import) from the source.
+   *
+   * @throws \Exception
+   */
+  private function generateDspaceImports() {
+    $this->setupProgressBar();
+    foreach ($this->operations as $this->curOperationSourcePath => $operation_paths) {
+      $this->initCurImportOperation();
+      foreach ($operation_paths as $this->curOperationItemSourcePath) {
+        $this->setTargetItemTargetPath();
+        $this->convertAppentModsMetadata();
+        foreach ($this->mappingStyle['elements'] as $map_element) {
+          $this->setTargetItemElements($map_element);
+          // If there aren't any actual values, do not create elements.
+          if (!empty($this->targetItemValues)) {
+            $this->createDCItems($map_element);
+          }
+        }
+        $this->writeTargetItemMetadataFiles();
+        $this->writeTargetItemBitstreamFiles();
+        $this->crosswalkProgressBar->advance();
+        $this->targetItemCounter++;
+      }
+    }
+    $this->crosswalkProgressBar->finish();
+  }
+
+  /**
+   * Sets up the progress bar for the conversion operation.
+   */
+  private function setupProgressBar() {
+    $num_operations = 0;
+    foreach ($this->operations as $operation_paths) {
+      $num_operations += count($operation_paths);
+    }
+    $this->crosswalkProgressBar = new ProgressBar($this->output, $num_operations);
+    $this->crosswalkProgressBar->setFormat('Converting Objects : %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
+    $this->crosswalkProgressBar->start();
+  }
+
+  /**
+   * Initializes and sets up the current import operation.
+   *
+   * @throws \Exception
+   */
+  private function initCurImportOperation() {
+    $this->targetItemCounter = 0;
+    $this->setupCurOperationStyle();
+    $this->setupCurOperationFiles();
+    $this->setupCurOperationBaseDir();
+  }
+
+  /**
+   * Reads and sets up the mapping style for the current import set operation.
+   *
+   * @throws \Exception
+   */
+  private function setupCurOperationStyle() {
+    $this->setCurOperationMapStyle();
+    $map_style_filepath = $this->curOperationSourcePath . '/field_map.txt';
+    if (empty($this->mapStyle)) {
+      throw new Exception(
+        sprintf(
+          'Unable to read style read from filepath, %s',
+          $map_style_filepath
+        )
+      );
+    }
+    $this->mappingStyle = $this->mapStyle['mappings'][file_get_contents($map_style_filepath)];
+  }
+
+  /**
+   * Sets up the mapping style for the current import set operation.
+   */
+  private function setCurOperationMapStyle() {
+    $map_style_file = $this->curOperationSourcePath . '/field_map.txt';
+    $map_style = file_get_contents($map_style_file);
+    $field_map_file = file_get_contents(__DIR__ . "/../../../field_maps/$map_style.yml");
+    $field_map = yaml_parse($field_map_file);
+    $this->mapStyle = $field_map['isdsbr']['field_maps'][$map_style];
+  }
+
+  /**
+   * Sets up the mapping files for the current import set operation.
+   *
+   * @throws \Exception
+   */
+  private function setupCurOperationFiles() {
+    $this->files = $this->mapStyle['files'];
     if (empty($this->files['dublin_core'])) {
       throw new Exception(
         'No dublin core filespec found in config.'
@@ -157,79 +300,29 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     }
   }
 
-  private function setupStyle($style) {
-    $this->mappings = Robo::Config()->get('isdsbr.mappings');
-    if (empty($this->mappings[$style])) {
-      throw new Exception(
-        sprintf(
-          'Invalid style specified, valid styles are: %s',
-          implode(', ', array_keys($this->mappings))
-        )
-      );
-    }
-    $this->mappingStyle = $this->mappings[$style];
+  /**
+   * Sets up the base target directory for the current import operation.
+   */
+  private function setupCurOperationBaseDir() {
+    $operation_basename = basename($this->curOperationSourcePath);
+    $operation_target_dir = $this->targetPath . "/$operation_basename";
+    mkdir($operation_target_dir, 0755);
   }
 
+  /**
+   * Sets up the target item path for the current item.
+   */
   private function setTargetItemTargetPath() {
     $padded_counter_string = str_pad($this->targetItemCounter,4,'0',STR_PAD_LEFT);
-    $this->targetItemTargetPath = $this->targetPath . "/item_$padded_counter_string";
-    mkdir($this->targetItemTargetPath, 0755);
+    $operation_basename = basename($this->curOperationSourcePath);
+    $this->targetItemTargetPath = $this->targetPath . "/$operation_basename/item_$padded_counter_string";    mkdir($this->targetItemTargetPath, 0755);
   }
 
-  private function generateDspaceImports() {
-    $progress_bar = new ProgressBar($this->output, count($this->operations));
-    $progress_bar->setFormat('Converting Objects : %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
-    $progress_bar->start();
-
-    foreach ($this->operations as $operation) {
-      $this->sourceItemPath = $operation;
-      $this->setTargetItemTargetPath();
-      $this->setUpTargetItems();
-
-      foreach ($this->mappingStyle['elements'] as $map_element) {
-        $this->setTargetItemElements($map_element);
-        // If there aren't any actual values, do not create elements.
-        if (!empty($this->targetItemValues)) {
-          $this->createDCItems($map_element);
-        }
-      }
-      $this->writeTargetItemFiles();
-      $this->writeItemFiles();
-      $progress_bar->advance();
-      $this->targetItemCounter++;
-    }
-    $progress_bar->finish();
-  }
-
-  private function writeItemFiles() {
-    $this->targetItemContents = [];
-    $this->writePDFFile();
-    $this->writeContentsFile();
-  }
-
-  private function writePDFFile() {
-    $this->copyItemFile('PDF.0.pdf', 'item.pdf', "\tprimary:true");
-  }
-
-  private function writeContentsFile() {
-    if (!empty($this->targetItemContents)) {
-      $contents_filename = "{$this->targetItemTargetPath}/contents";
-      file_put_contents($contents_filename, implode("\n", $this->targetItemContents));
-    }
-  }
-
-  private function copyItemFile($source_name, $target_name, $identifier = NULL) {
-    if (file_exists($this->sourceItemPath . "/$source_name")) {
-      copy (
-        $this->sourceItemPath . "/$source_name",
-        $this->targetItemTargetPath . "/$target_name"
-      );
-      $this->targetItemContents[] = $target_name.$identifier;
-    }
-  }
-
-  private function setUpTargetItems() {
-    $this->sourceItemCrawler = new Crawler(file_get_contents($this->sourceItemPath . '/MODS.0.xml'));
+  /**
+   * Converts the MODS metadata into DC format(s), appends to current item DOM.
+   */
+  private function convertAppentModsMetadata() {
+    $this->sourceItemCrawler = new Crawler(file_get_contents($this->curOperationItemSourcePath . '/MODS.0.xml'));
     foreach ($this->files as $metadata_id => $metadata_file) {
       $this->files[$metadata_id]['xml'] = new DomDocument($metadata_file['xml-version'], $metadata_file['xml-encoding']);
       $dc_element = $this->files[$metadata_id]['xml']->createElement('dublin_core');
@@ -242,16 +335,11 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     }
   }
 
-  private function writeTargetItemFiles() {
-    foreach ($this->files as $metadata_id => $metadata_file) {
-      $this->files[$metadata_id]['xml']->formatOutput = TRUE;
-      $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
-      file_put_contents($output_file, $this->files[$metadata_id]['xml']->saveXML());
-    }
-  }
-
   /**
+   * Maps the MODS elements to the target DC elements.
+   *
    * @param $map_element
+   *   The DOM element to map from MODS.
    */
   private function setTargetItemElements($map_element) {
     $this->targetItemElements = [];
@@ -269,6 +357,8 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   }
 
   /**
+   * Creates the DC metadata elements from the MODS source.
+   *
    * @param $map_item
    */
   private function createDCItems(&$map_item) {
@@ -299,11 +389,17 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   }
 
   /**
+   * Gets an element matching the parameters if it exists, otherwise creates it.
+   *
    * @param $parent_node
+   *   The parent node in the DOM to search for the existing element.
    * @param $name
+   *   The name of the element.
    * @param $attrs
+   *   The attributes of the element.
    *
    * @return mixed
+   *   The element, either found or newly created.
    */
   private function createGetElement(&$parent_node, $name, $attrs, $file_id) {
     $existing = $this->searchChildElementsByName($parent_node, $name, $attrs);
@@ -330,47 +426,76 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     return $new_node;
   }
 
-  private function initOperations() {
-    if ( $this->targetPath == NULL || !is_writable($this->targetPath)) {
-      throw new Exception(
-        sprintf(
-          'The specified target path, %s is not writable',
-          $this->targetPath
-        )
+  /**
+   * Writes out the current item's target DC metadata file(s).
+   */
+  private function writeTargetItemMetadataFiles() {
+    foreach ($this->files as $metadata_id => $metadata_file) {
+      $this->files[$metadata_id]['xml']->formatOutput = TRUE;
+      $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
+      file_put_contents($output_file, $this->files[$metadata_id]['xml']->saveXML());
+    }
+  }
+
+  /**
+   * Writes out the current item's bitstream files into the SAF directory.
+   */
+  private function writeTargetItemBitstreamFiles() {
+    $this->targetItemContents = [];
+    $this->writePDFFile();
+    $this->writeContentsFile();
+  }
+
+  /**
+   * Writes out the current item's main (PDF) file into the SAF directory.
+   */
+  private function writePDFFile() {
+    $this->copyItemFile('PDF.0.pdf', 'item.pdf', "\tprimary:true");
+  }
+
+  /**
+   * Provides a helper method to copy bitstreams from source to target.
+   *
+   * @param $source_name
+   *   The name of the source file to copy.
+   * @param $target_name
+   *   The name of the target file.
+   * @param null $identifier
+   *   The identifier to use in the SAF contents file.
+   */
+  private function copyItemFile($source_name, $target_name, $identifier = NULL) {
+    if (file_exists($this->curOperationItemSourcePath . "/$source_name")) {
+      copy (
+        $this->curOperationItemSourcePath . "/$source_name",
+        $this->targetItemTargetPath . "/$target_name"
       );
+      $this->targetItemContents[] = $target_name.$identifier;
     }
   }
 
-  private function setUpOperations() {
-    $finder = new Finder();
-    $finder->files()->in($this->sourcePath)->name(self::EXPORT_DIR_IDENTIFIER);
-    foreach ($finder as $file) {
-      $this->operations[] = $file->getPath();
+  /**
+   * Writes out the current item's 'contents' file into the SAF directory.
+   */
+  private function writeContentsFile() {
+    if (!empty($this->targetItemContents)) {
+      $contents_filename = "{$this->targetItemTargetPath}/contents";
+      file_put_contents($contents_filename, implode("\n", $this->targetItemContents));
     }
   }
 
-  function getDoc($s) {
+  /**
+   * Generates a DOMDocument from a string.
+   *
+   * @param string $source
+   *   The string to use.
+   *
+   * @return \DOMDocument
+   *   The generated object.
+   */
+  function getDoc($source) {
     $doc = new DOMDocument;
-    $doc->loadxml($s);
+    $doc->loadxml($source);
     return $doc;
-  }
-
-  function getStylesheetData() {
-    return <<< eox
-<?xml version="1.0" encoding="ISO-8859-1"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-<xsl:output method="xml" version="1.0" encoding="iso-8859-1" indent="yes"/>
-<xsl:strip-space elements="*" />
-<xsl:template match="@* | node()">
-    <xsl:copy>
-        <xsl:copy-of select="@*"/>
-        <xsl:apply-templates select="node()">
-            <xsl:sort select="name()"/>
-        </xsl:apply-templates>
-    </xsl:copy>
-</xsl:template>
-</xsl:stylesheet>   
-eox;
   }
 
 }
