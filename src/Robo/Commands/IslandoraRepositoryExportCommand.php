@@ -4,18 +4,16 @@ namespace UnbLibraries\IslandoraDspaceBridge\Robo\Commands;
 
 use Exception;
 use Robo\Robo;
-use Robo\Tasks;
 use Symfony\Component\Console\Helper\ProgressBar;
+use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeCommand;
 
 /**
  * Provides commands to export objects from Islandora/Fedora based on a solr query.
  */
-class IslandoraRepositoryExportCommand extends Tasks {
+class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
 
   // const SOLR_INT_MAX = 2147483647;
   const SOLR_INT_MAX = 5;
-
-  const PROGRESS_BAR_FORMAT = '';
 
   /**
    * @var array
@@ -31,6 +29,17 @@ class IslandoraRepositoryExportCommand extends Tasks {
    * @var string
    */
   protected $exportPath = NULL;
+
+  protected $exportCollections;
+  protected $exportIslandoraHostname;
+  protected $exportSolrHostname;
+  protected $exportSolrUri;
+  protected $exportSolrCoreName;
+  protected $exportFedoraJavaHome;
+  protected $exportFedoraHome;
+  protected $exportFedoraAdminUser;
+  protected $exportFedoraAdminPass;
+  protected $exportFedoraFormat;
 
   /**
    * Export objects from Islandora/Fedora based on a solr query.
@@ -57,6 +66,12 @@ class IslandoraRepositoryExportCommand extends Tasks {
    * @throws \Exception
    */
   private function initExport($path) {
+    $this->setUpExportPath($path);
+    $this->setUpConfigValues();
+    $this->setUpProgressBar();
+  }
+
+  private function setUpExportPath($path) {
     $this->exportPath = $path;
     if ( $this->exportPath == NULL || !is_writable($this->exportPath)) {
       throw new Exception(
@@ -68,6 +83,19 @@ class IslandoraRepositoryExportCommand extends Tasks {
     }
   }
 
+  private function setUpConfigValues() {
+    $this->exportCollections = Robo::Config()->get('isdsbr.collections');
+    $this->exportIslandoraHostname = Robo::Config()->get('isdsbr.fedora.hostname');
+    $this->exportSolrHostname = Robo::Config()->get('isdsbr.solr.hostname');
+    $this->exportSolrUri = Robo::Config()->get('isdsbr.solr.uri');
+    $this->exportSolrCoreName = Robo::Config()->get('isdsbr.solr.core');
+    $this->exportFedoraJavaHome = Robo::Config()->get('isdsbr.fedora.java_home');
+    $this->exportFedoraHome = Robo::Config()->get('isdsbr.fedora.fedora_home');
+    $this->exportFedoraAdminUser = Robo::Config()->get('isdsbr.fedora.admin_user');
+    $this->exportFedoraAdminPass = Robo::Config()->get('isdsbr.fedora.admin_pass');
+    $this->exportFedoraFormat = Robo::Config()->get('isdsbr.fedora.export_format');
+  }
+
   /**
    *
    */
@@ -76,10 +104,8 @@ class IslandoraRepositoryExportCommand extends Tasks {
   }
 
   private function doObjectDiscovery() {
-    $collections = Robo::Config()->get('isdsbr.collections');
-    foreach ($collections as $collection_id => $collection) {
-      $this->io()->title('Object Discovery: ' . $collection['label']);
-      $this->io()->text(
+    foreach ($this->exportCollections as $collection_id => $collection) {
+      $this->addLogNotice(
         sprintf(
           "[%s] Querying solr server for objects...",
           $collection['label']
@@ -89,7 +115,7 @@ class IslandoraRepositoryExportCommand extends Tasks {
         'collection'=> $collection,
         'pid_list' => $this->getPidsFromQuery($collection['query'])
       ];
-      $this->io()->text(
+      $this->addLogNotice(
         sprintf(
           "[%s] %s objects found and queued for export...",
           $collection['label'],
@@ -100,23 +126,21 @@ class IslandoraRepositoryExportCommand extends Tasks {
   }
 
   private function getPidsFromQuery($query) {
-    $ssh_hostname = Robo::Config()->get('isdsbr.solr.hostname');
     $query_uri = sprintf(
       "%s/%s/select?%s&rows=%s&fl=PID&wt=csv&indent=true",
-      Robo::Config()->get('isdsbr.solr.uri'),
-      Robo::Config()->get('isdsbr.solr.core'),
+      $this->exportSolrUri,
+      $this->exportSolrCoreName,
       $query,
       self::SOLR_INT_MAX
     );
     $query_command = "curl \"$query_uri\"";
-    $this->io()->note(
+    $this->addLogNotice(
       sprintf(
-        '[%s] %s',
-        $ssh_hostname,
-        $query_command
+        '[%s] Execute solr query...',
+        $this->exportSolrHostname
       )
     );
-    $query_result = $this->taskSshExec($ssh_hostname)
+    $query_result = $this->taskSshExec($this->exportSolrHostname)
       ->exec($query_command)
       ->silent(TRUE)
       ->run();
@@ -134,18 +158,15 @@ class IslandoraRepositoryExportCommand extends Tasks {
   private function exportObjects() {
     foreach ($this->operations as $operation_idx => $operation) {
       $collection = $operation['collection'];
-      $this->io()->title('Object Export: ' . $collection['label']);
-
+      $this->addLogNotice('Object Export: ' . $collection['label']);
       $operation_export_path = $this->exportPath . "/$operation_idx";
       if (!file_exists($operation_export_path)) {
         mkdir($operation_export_path, 0777, TRUE);
       }
 
-      $progress_bar = new ProgressBar($this->output, count($operation['pid_list']));
-      $progress_bar->setFormat('%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
-      $progress_bar->start();
-
+      $this->setProgressBarMaxValue(count($operation['pid_list']));
       foreach ($operation['pid_list'] as $pid) {
+        $this->addLogNotice("Exporting PID $pid from ...");
         $export_file = $this->exportIslandoraItem($pid, $operation);
         $file_info = pathinfo($export_file);
         $temp_dir = $this->tempdir();
@@ -165,14 +186,14 @@ class IslandoraRepositoryExportCommand extends Tasks {
           $this->needManualCopy[] = $pid;
         }
 
-        $progress_bar->advance();
+        $this->progressBarAdvance();
       }
 
       // Write mapping format.
-      file_put_contents("$operation_export_path/field_map.txt", $operation['collection']['field_map']);
+      file_put_contents($operation_export_path . '/' . self::ISDSBR_FIELD_MAPPING_FILENAME, $operation['collection']['field_map']);
 
       // Finish up.
-      $progress_bar->finish();
+      $this->progressBar->finish();
       $this->io()->newLine(2);
 
       // Report any issues.
@@ -316,15 +337,15 @@ class IslandoraRepositoryExportCommand extends Tasks {
   private function generateExportArchive($pid) {
     $export_command = sprintf(
       'JAVA_HOME=%s FEDORA_HOME=%s ./fedora-export.sh localhost:8080 %s %s %s %s migrate /tmp http',
-      Robo::Config()->get('isdsbr.fedora.java_home'),
-      Robo::Config()->get('isdsbr.fedora.fedora_home'),
-      Robo::Config()->get('isdsbr.fedora.admin_user'),
-      Robo::Config()->get('isdsbr.fedora.admin_pass'),
+      $this->exportFedoraJavaHome,
+      $this->exportFedoraHome,
+      $this->exportFedoraAdminUser,
+      $this->exportFedoraAdminPass,
       $pid,
-      Robo::Config()->get('isdsbr.fedora.export_format')
+      $this->exportFedoraFormat
     );
-    $fedora_bin_dir = Robo::Config()->get('isdsbr.fedora.fedora_home') . '/client/bin';
-    $result = $this->taskSshExec(Robo::Config()->get('isdsbr.fedora.hostname'))
+    $fedora_bin_dir = $this->exportFedoraHome . '/client/bin';
+    $result = $this->taskSshExec($this->exportIslandoraHostname)
       ->exec($export_command)
       ->remoteDir($fedora_bin_dir)
       ->forcePseudoTty()

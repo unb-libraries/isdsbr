@@ -9,11 +9,12 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-
-    "consolidation/robo": "^1.0",
-    "guzzlehttp/guzzle": "^6.3",
+    "consolidation/robo": "^3",
     "ext-dom": "*",
-    "joshfraser/php-name-parser": "dev-master"
+    "guzzlehttp/guzzle": "^6.3",
+    "joshfraser/php-name-parser": "dev-master",
+    "symfony/dom-crawler": "^3",
+    "trash-panda/progress-bar-log": "^1"
   },
   "authors": [
     {

@@ -4,9 +4,6 @@ namespace UnbLibraries\IslandoraDspaceBridge\Robo\Commands;
 
 use DOMDocument;
 use Exception;
-use Robo\Robo;
-use Robo\Tasks;
-use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Finder\Finder;
 use UnbLibraries\IslandoraDspaceBridge\AuthorTransformTrait;
@@ -14,6 +11,7 @@ use UnbLibraries\IslandoraDspaceBridge\DateTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DepartmentGrantorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeCommand;
 use UnbLibraries\IslandoraDspaceBridge\SubjectTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ThesisAdvisorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ThesisTypeTransformTrait;
@@ -21,7 +19,7 @@ use UnbLibraries\IslandoraDspaceBridge\ThesisTypeTransformTrait;
 /**
  * Provides commands to convert Islandora exports into Simple Archive Format.
  */
-class IslandoraDspaceCrosswalkCommand extends Tasks {
+class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
 
   use AuthorTransformTrait;
   use DateTransformTrait;
@@ -31,15 +29,6 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
   use SubjectTransformTrait;
   use ThesisAdvisorTransformTrait;
   use ThesisTypeTransformTrait;
-
-  const EXPORT_DIR_IDENTIFIER = 'MODS.0.xml';
-
-  /**
-   * The console progress bar.
-   *
-   * @var object
-   */
-  protected $crosswalkProgressBar;
 
   /**
    * The current operation's item source path.
@@ -166,8 +155,18 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
     $this->sourcePath = $source_path;
     $this->targetPath = $target_path;
     $this->initOperations();
+    $this->setupProgressBar();
     $this->setUpOperations();
+    $this->setupProgressBarMaxValue();
     $this->generateDspaceImports();
+  }
+
+  protected function setupProgressBarMaxValue() {
+    $num_operations = 0;
+    foreach ($this->operations as $operation) {
+      $num_operations += count($operation);
+    }
+    $this->setProgressBarMaxValue($num_operations);
   }
 
   /**
@@ -196,7 +195,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
       $source_dir = $import_dir->getPath();
       $this->operations[$source_dir] = [];
       $finder = new Finder();
-      $finder->files()->in($source_dir)->name(self::EXPORT_DIR_IDENTIFIER);
+      $finder->files()->in($source_dir)->name(self::ISDSBR_EXPORT_DIR_IDENTIFIER);
       foreach ($finder as $file) {
         $this->operations[$source_dir][] = $file->getPath();
       }
@@ -210,10 +209,10 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    */
   private function generateDspaceImports() {
     foreach ($this->operations as $this->curOperationSourcePath => $operation_paths) {
-      $this->io()->title("Object Crosswalk: $this->curOperationSourcePath");
-      $this->setupProgressBar($operation_paths);
+      $this->addLogNotice("Object Crosswalk: $this->curOperationSourcePath");
       $this->initCurImportOperation();
       foreach ($operation_paths as $this->curOperationItemSourcePath) {
+        $this->addLogNotice('Converting ' . $this->curOperationItemSourcePath);
         $this->setTargetItemTargetPath();
         $this->convertAppentModsMetadata();
         foreach ($this->mappingStyle['elements'] as $map_element) {
@@ -225,21 +224,12 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
         }
         $this->writeTargetItemMetadataFiles();
         $this->writeTargetItemBitstreamFiles();
-        $this->crosswalkProgressBar->advance();
+        $this->progressBarAdvance();
         $this->targetItemCounter++;
       }
-      $this->crosswalkProgressBar->finish();
       $this->io()->newLine(2);
     }
-  }
-
-  /**
-   * Sets up the progress bar for the conversion operation.
-   */
-  private function setupProgressBar($operation_paths) {
-    $this->crosswalkProgressBar = new ProgressBar($this->output, count($operation_paths));
-    $this->crosswalkProgressBar->setFormat('%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s% Memory Use');
-    $this->crosswalkProgressBar->start();
+    $this->progressBar->finish();
   }
 
   /**
@@ -261,7 +251,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    */
   private function setupCurOperationStyle() {
     $this->setCurOperationMapStyle();
-    $map_style_filepath = $this->curOperationSourcePath . '/field_map.txt';
+    $map_style_filepath = $this->curOperationSourcePath . '/' . self::ISDSBR_FIELD_MAPPING_FILENAME;
     if (empty($this->mapStyle)) {
       throw new Exception(
         sprintf(
@@ -277,7 +267,7 @@ class IslandoraDspaceCrosswalkCommand extends Tasks {
    * Sets up the mapping style for the current import set operation.
    */
   private function setCurOperationMapStyle() {
-    $map_style_file = $this->curOperationSourcePath . '/field_map.txt';
+    $map_style_file = $this->curOperationSourcePath . '/' . self::ISDSBR_FIELD_MAPPING_FILENAME;
     $map_style = file_get_contents($map_style_file);
     $field_map_file = file_get_contents(__DIR__ . "/../../../field_maps/$map_style.yml");
     $field_map = yaml_parse($field_map_file);
