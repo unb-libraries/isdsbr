@@ -166,7 +166,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
 
       $this->setProgressBarMaxValue(count($operation['pid_list']));
       foreach ($operation['pid_list'] as $pid) {
-        $this->addLogNotice("Exporting PID $pid from ...");
+        $this->addLogNotice("Exporting PID $pid from $this->exportIslandoraHostname...");
         $export_file = $this->exportIslandoraItem($pid, $operation);
         $file_info = pathinfo($export_file);
         $temp_dir = $this->tempdir();
