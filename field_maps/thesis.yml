@@ -6,11 +6,16 @@ isdsbr:
           filename: dublin_core.xml
           xml-version: 1.0
           xml-encoding: UTF-8
-        dc_etd:
-          filename: metadata_etd.xml
+        dc_thesis:
+          filename: metadata_thesis.xml
           xml-version: 1.0
           xml-encoding: UTF-8
-          schema: etd
+          schema: thesis
+        dc_unb:
+          filename: metadata_unb.xml
+          xml-version: 1.0
+          xml-encoding: UTF-8
+          schema: unb
       mappings:
         thesis:
           name: thesis
@@ -87,6 +92,76 @@ isdsbr:
                     qualifier: other
             -
               source_paths:
+                - //mods:mods/mods:recordInfo/mods:recordOrigin
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: description
+                    qualifier: provenance
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='doi']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: doi
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='uri']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: uri
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='oclc']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: oclc
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='issn']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: issn
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='isbn']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: isbn
+            -
+              source_paths:
+                - //mods:mods/mods:note
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: description
+                    qualifier: note
+            -
+              source_paths:
                 - //mods:mods/mods:physicalDescription/mods:form
               transform_callback: "transformLiteral"
               target_file: dublin_core
@@ -125,6 +200,16 @@ isdsbr:
                   attributes:
                     element: subject
                     qualifier: lcsh
+            -
+              source_paths:
+                - //mods:mods/mods:subject[@authority='cash']/mods:topic
+              transform_callback: "transformSubject"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: cash
             -
               source_paths:
                 - //mods:mods/mods:accessCondition[@type='useAndReproduction']
@@ -177,6 +262,25 @@ isdsbr:
                     qualifier: issued
             -
               source_paths:
+                - //mods:mods/mods:originInfo/mods:publisher
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: publisher
+            -
+              source_paths:
+                - //mods:mods/mods:location/mods:url
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: url
+            -
+              source_paths:
                 - //mods:mods/mods:recordInfo/mods:recordChangeDate
               transform_callback: "transform8601Date"
               target_file: dublin_core
@@ -194,12 +298,12 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: date
-                    qualifier: available
+                    qualifier: accessioned
             -
               source_paths:
                 - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDisciplineName
               transform_callback: "transformLiteral"
-              target_file: dc_etd
+              target_file: dc_thesis
               target_path:
                 - name: dcvalue
                   attributes:
@@ -209,7 +313,7 @@ isdsbr:
               source_paths:
                 - //mods:mods/mods:name[@type='corporate']
               transform_callback: "transformGrantor"
-              target_file: dc_etd
+              target_file: dc_thesis
               target_path:
                 - name: dcvalue
                   attributes:
@@ -219,7 +323,7 @@ isdsbr:
               source_paths:
                 - //mods:mods/mods:name[@type='corporate']
               transform_callback: "transformGrantorDepartment"
-              target_file: dc_etd
+              target_file: dc_thesis
               target_path:
                 - name: dcvalue
                   attributes:
@@ -229,9 +333,91 @@ isdsbr:
               source_paths:
                 - //mods:mods/mods:extension/etd:degree/etd:level
               transform_callback: "transformLiteral"
-              target_file: dc_etd
+              target_file: dc_thesis
               target_path:
                 - name: dcvalue
                   attributes:
                     element: degree
                     qualifier: 'level'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/etd:degree/etd:name
+              transform_callback: "transformLiteral"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'name'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbInstitutionName
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: campus
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbCollectionName
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: collection
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDepartmentName
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: department
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDisciplineName
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: discipline
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbFacultyName
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: faculty
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbGroupName
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: groupName
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbObjectType
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: objectType
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbScholarshipLevel
+              transform_callback: "transformLiteral"
+              target_file: dc_unb
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: scholarLevel
