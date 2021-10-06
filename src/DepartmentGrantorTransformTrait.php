@@ -13,7 +13,7 @@ trait DepartmentGrantorTransformTrait {
         $names = $this->getChildElementValuesByNameAttr($element, 'namePart');
         foreach ($names as $name) {
           if (!empty($name) && $this->grantorIsInstitution($name)) {
-            $this->targetItemValues[] = $name;
+            $this->targetItemValues[] = rtrim($name, '.');
           }
         }
       }
@@ -26,7 +26,7 @@ trait DepartmentGrantorTransformTrait {
         $names = $this->getChildElementValuesByNameAttr($element, 'namePart');
         foreach ($names as $name) {
           if (!empty($name) && !$this->grantorIsInstitution($name)) {
-            $this->targetItemValues[] = $name;
+            $this->targetItemValues[] = rtrim($name, '.');
           }
         }
       }

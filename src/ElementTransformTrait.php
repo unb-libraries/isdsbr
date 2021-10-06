@@ -25,6 +25,15 @@ trait ElementTransformTrait {
     }
   }
 
+  protected function transformLiteralStripTrailingPeriod() {
+    foreach ($this->targetItemElements as $element) {
+      $text_content = $element->textContent;
+      if (!empty($text_content)) {
+        $this->targetItemValues[] = rtrim($text_content, '.');
+      }
+    }
+  }
+
   protected static function getFirstChildElementValueByNameAttr($elements, $name, $attr_tag = NULL, $attr_value = NULL) {
     foreach ($elements->getElementsByTagName($name) as $element) {
       if (!empty($attr_tag) && !empty($attr_value)) {

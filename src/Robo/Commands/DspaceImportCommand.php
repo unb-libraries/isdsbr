@@ -18,6 +18,7 @@ class DspaceImportCommand extends Tasks {
   const IMPORT_ZIP_PATH = '/tmp';
   const IMPORT_LOCAL_MAP_PATH = 'import_maps';
   const DSPACE_BIN_PATH = '/dspace/bin/dspace';
+  const DSPACE_ADMIN_USER = 'jsanford@unb.ca';
 
   /**
    * @var string
@@ -67,6 +68,7 @@ class DspaceImportCommand extends Tasks {
     $this->zipImportFolder();
     $this->copyZipToContainer();
     $this->importContainerZip();
+    $this->executeFilterMedia();
     $this->copyMapFile();
   }
 
@@ -100,7 +102,7 @@ class DspaceImportCommand extends Tasks {
   private function revertImport() {
     $this->io()->title('Reverting Import');
     $dspace_bin = self::DSPACE_BIN_PATH;
-    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --eperson=dspaceadmin@unb.ca -d -m /tmp/{$this->importMapFileName}";
+    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --eperson=" . self::DSPACE_ADMIN_USER . " -d -m /tmp/{$this->importMapFileName}";
     $this->say($cmd);
     passthru($cmd);
   }
@@ -161,7 +163,15 @@ class DspaceImportCommand extends Tasks {
     $this->io()->title('Importing Archive Format');
     $dspace_bin = self::DSPACE_BIN_PATH;
     $mapfile = '/tmp/' . $this->importMapFileName;
-    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --add --collection={$this->dspaceCollection} --eperson=dspaceadmin@unb.ca --source=" . self::IMPORT_ZIP_PATH . " --zip={$this->importZipFileName} --mapfile=$mapfile";
+    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --add --collection={$this->dspaceCollection} --eperson=" . self::DSPACE_ADMIN_USER . " --source=" . self::IMPORT_ZIP_PATH . " --zip={$this->importZipFileName} --mapfile=$mapfile";
+    $this->say($cmd);
+    passthru($cmd);
+  }
+
+  private function executeFilterMedia() {
+    $this->io()->title('Executing dspace filter-media on collection');
+    $dspace_bin = self::DSPACE_BIN_PATH;
+    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin filter-media -i {$this->dspaceCollection}";
     $this->say($cmd);
     passthru($cmd);
   }
