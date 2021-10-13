@@ -1,59 +1,73 @@
-# systems-toolkit
-## Automate all the common tasks.
-A Robo based application that automates and standardizes several common tasks.
+# Islandora-Dspace Bridge
+## Automated Islandora-Dspace Migrations
+__isdsbr__ is a PHP application that automates and standardizes a migration from Islandora (MODS metadata) to DSpace (Dublin Core metadata). __isdsbr__ is based on the Robo framework.
 
 ## Getting Started
-### Requirements
-The following packages are required to be globally installed:
+### General requirements
+Although __isdsbr__ can be deployed on OSX, the only officially supported operating system is Linux.
 
-* [PHP7](https://php.org/) - Install instructions [are here for OSX](https://gist.github.com/JacobSanford/52ad35b83bcde5c113072d5591eb89bd).
-* [Composer](https://getcomposer.org/)
-* [docker](https://www.docker.com)/[docker-compose](https://docs.docker.com/compose/)
+### Software Prerequisites
+You must have the following tools available for use from the command line:
 
-### 1. Initial Setup
-```
-composer install --prefer-dist
-```
+* [PHP7.3+](https://php.org/): Install via ```apt-get install php-cli```
+* Various PHP Extensions: Install via ```apt-get install php-curl php-ctype php-dom php-gd php-mbstring php-posix php-yaml php-zip```
+* [composer](https://getcomposer.org/): Installation steps [are located here](https://getcomposer.org/download/).
 
-### 2. Commands
+## Networking
+__isdsbr__ requires your local workstation to make HTTP, HTTPS and SSH requests. These requests must not be blocked. If you use a proxy server to connect to the web or SSH, you must also configure your OS to use that proxy by default.
+
+### Initial Setup
 ```
- cyberman
-  cyberman:sendmessage                      Send a message via the CyberMan Slack bot.
- drupal
-  drupal:8:doupdates                        Perform needed Drupal 8 updates automatically.
-  drupal:8:getupdates                       Get the list of needed Drupal 8 updates .
-  drupal:8:rebasedevprod                    Rebase dev onto prod for multiple Drupal 8 Repositories. Robo Command.
-  drupal:8:rebuild-redeploy                 Rebuild all Drupal 8 docker images and redeploy in their current state.
- dzi
-  dzi:generate-tiles                        Generate DZI tiles for a file.
-  dzi:generate-tiles:tree                   Generate DZI tiles for an entire tree.
- github
-  github:repo:cherry-pick-multiple          Cherry pick a commit from a repo onto multiple others. Robo Command.
-  github:repo:rebasedevprod                 Rebase dev onto prod for multiple GitHub Repositories. Robo Commmand.
-  github:user:activity                      Get a list of recent commits to GitHub by a user.
- jira
-  jira:project:info                         Get project info from the JIRA ID.
- k8s
-  k8s:logs                                  Get a kubernetes service logs from the URI and namespace.
-  k8s:shell                                 Get a kubernetes service shell from a URI and namespace.
- newspapers.lib.unb.ca
-  newspapers.lib.unb.ca:create-issue        Import a single digital serial issue from a file path.
-  newspapers.lib.unb.ca:create-issues-tree  Create digital serial issues from a tree containing files.
-  newspapers.lib.unb.ca:create-page         Create a digital serial page from a source file.
-  newspapers.lib.unb.ca:generate-page-ocr   Generate and update the OCR content for a digital serial page.
-  newspapers.lib.unb.ca:get-page            Download the image of a digital serial page.
- ocr
-  ocr:tesseract:file                        Generate OCR for a file.
-  ocr:tesseract:tree                        Generate OCR for an entire tree.
-  ocr:tesseract:tree:metrics                Generate metrics for OCR confidence and word count for a tree.
- travis
-  travis:build:get-latest                   Get the latest travis build job details for a repository.
-  travis:build:get-latest-id                Get the latest travis build job ID for a repository.
-  travis:build:restart                      Restart a travis build job.
-  travis:build:restart-latest               Restart the latest travis build job in a branch of a repository.
- updater
-  updater:composer-apps                     Updates composer-based apps on various servers.
+composer install
 ```
 
-### 3. Other Commands
-Run ```vendor/bin/syskit``` to get a list of available commands.
+## Usage
+### 1. isdsbr:export
+#### Remote -> Local
+Discover objects from Islandora/Fedora based on a solr query, and then export them to a local path via __fedora-export.sh__ in the ATOMZip format:
+
+```
+./isdsbr isdsbr:export /tmp/exportFedora
+```
+
+The solr query and all necessary configuration is read from isdsbr.yml.
+
+### 2. isdsbr:crosswalk
+#### Local -> Local
+Migrate the Islandora MODS-based content into Dublin Core based Simple Archive Format metadata:
+
+```
+./isdsbr isdsbr:crosswalk /tmp/exportFedora /tmp/exportDspace
+```
+
+### 3. isdsbr:import
+#### Local -> Remote
+Import the local migrated DSpace metadata into a remote DSpace instance running in a k8s pod:
+
+```
+./isdsbr isdsbr:import /tmp/exportDspace unbscholar-lib-unb-ca-cd47bfccc-74p7g prod 1234567/21
+```
+
+(Optionally) Revert an import by leveraging the timestamped export map file:
+
+```
+./isdsbr isdsbr:import:revert 1600784182 unbscholar-lib-unb-ca-cd47bfccc-74p7g prod
+```
+
+## Releases
+__isdsbr__ releases are not tagged according to semantic versioning. Using the HEAD commit is recommended.
+
+We add features to the product often, and deprecate quickly. Expect rapid development that introduces backwards-incompatible changes.
+
+## Author / Contributors
+This application was created at [![UNB Libraries](https://github.com/unb-libraries/assets/raw/master/unblibbadge.png "UNB Libraries")](https://lib.unb.ca) by the following humans:
+
+<a href="https://github.com/JacobSanford"><img src="https://avatars.githubusercontent.com/u/244894?v=3" title="Jacob Sanford" width="128" height="128"></a>
+
+We gladly accept improvements and contributions, and if you would like to help improve __isdsbr__, please forward a Pull Request.
+
+## License
+- As part of our 'open' ethos, UNB Libraries licenses its applications and workflows to be freely available to all whenever possible.
+- Consequently, the contents of this repository [unb-libraries/isdsbr] are licensed under the [MIT License](http://opensource.org/licenses/mit-license.html). This license explicitly excludes:
+    - Any website content, which remains the exclusive property of its author(s).
+    - The UNB logo and any of the associated suite of visual identity assets, which remains the exclusive property of the University of New Brunswick.

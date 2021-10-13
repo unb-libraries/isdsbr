@@ -4,11 +4,12 @@ namespace UnbLibraries\IslandoraDspaceBridge\Robo\Commands;
 
 use Exception;
 use Robo\Robo;
-use Symfony\Component\Console\Helper\ProgressBar;
 use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeCommand;
 
 /**
  * Provides commands to export objects from Islandora/Fedora based on a solr query.
+ *
+ * @TODO Documentation.
  */
 class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
 
@@ -52,9 +53,9 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    *
-   * @command isdsbr:backup:local
+   * @command isdsbr:export
    */
-  public function islandoraRepositoryBackupToLocal($path, $options = ['yes' => FALSE]) {
+  public function islandoraExportToLocal($path, $options = ['yes' => FALSE]) {
     $this->initExport($path);
     $this->setUpOperations();
     $this->exportObjects();
@@ -231,17 +232,6 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     return NULL;
   }
 
-
-  /**
-   * Copy a file, or recursively copy a folder and its contents
-   * @author      Aidan Lister <aidan@php.net>
-   * @version     1.0.1
-   * @link        http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
-   * @param       string   $source    Source path
-   * @param       string   $dest      Destination path
-   * @param       int      $permissions New folder creation permissions
-   * @return      bool     Returns true on success, false on failure
-   */
   /**
    * Copy files from one directory to another, recursively.
    *

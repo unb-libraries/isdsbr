@@ -137,19 +137,22 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
 
 
   /**
-   * Convert an Islandora export to DSpace Simple Import Format.
+   * Converts an Islandora export to a DSpace Simple Import Format tree.
    *
    * @param string $source_path
    *   The path to import the Islandora items from.
    * @param string $target_path
    *   The path to export the Simple Import Format items to.
+   * @param string[] $options
+   *   The array of available CLI options.
    *
    * @option yes
    *   Assume a yes response for all prompts.
    *
-   * @throws \Exception
+   * @command isdsbr:crosswalk
+   * @usage isdsbr:crosswalk /tmp/source /tmp/target
    *
-   * @command isdsbr:convert
+   * @throws \Exception
    */
   public function islandoraExportConvertToDspaceImport($source_path, $target_path, $options = ['yes' => FALSE]) {
     $this->sourcePath = $source_path;
@@ -159,14 +162,6 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
     $this->setUpOperations();
     $this->setupProgressBarMaxValue();
     $this->generateDspaceImports();
-  }
-
-  protected function setupProgressBarMaxValue() {
-    $num_operations = 0;
-    foreach ($this->operations as $operation) {
-      $num_operations += count($operation);
-    }
-    $this->setProgressBarMaxValue($num_operations);
   }
 
   /**
@@ -200,6 +195,17 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
         $this->operations[$source_dir][] = $file->getPath();
       }
     }
+  }
+
+  /**
+   * Sets the maximum value for the progress bar based on operation count.
+   */
+  protected function setupProgressBarMaxValue() {
+    $num_operations = 0;
+    foreach ($this->operations as $operation) {
+      $num_operations += count($operation);
+    }
+    $this->setProgressBarMaxValue($num_operations);
   }
 
   /**
@@ -326,7 +332,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Maps the MODS elements to the target DC elements.
    *
-   * @param $map_element
+   * @param \DOMElement $map_element
    *   The DOM element to map from MODS.
    */
   private function setTargetItemElements($map_element) {
@@ -347,7 +353,8 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Creates the DC metadata elements from the MODS source.
    *
-   * @param $map_item
+   * @param array $map_item
+   *   The item to map.
    */
   private function createDCItems(&$map_item) {
     $prev_node = $this->files[$map_item['target_file']]['dcelement'];
@@ -379,12 +386,14 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Gets an element matching the parameters if it exists, otherwise creates it.
    *
-   * @param $parent_node
+   * @param \DOMNode $parent_node
    *   The parent node in the DOM to search for the existing element.
-   * @param $name
+   * @param string $name
    *   The name of the element.
-   * @param $attrs
+   * @param string[] $attrs
    *   The attributes of the element.
+   * @param string $file_id
+   *   The file ID to target.
    *
    * @return mixed
    *   The element, either found or newly created.
@@ -444,11 +453,11 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Provides a helper method to copy bitstreams from source to target.
    *
-   * @param $source_name
+   * @param string $source_name
    *   The name of the source file to copy.
-   * @param $target_name
+   * @param string $target_name
    *   The name of the target file.
-   * @param null $identifier
+   * @param string $identifier
    *   The identifier to use in the SAF contents file.
    */
   private function copyItemFile($source_name, $target_name, $identifier = NULL) {
