@@ -79,7 +79,7 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: format
-                    qualifier: medium
+                    qualifier: extent
             -
               source_paths:
                 - //mods:mods/mods:recordInfo/mods:recordIdentifier
@@ -169,7 +169,7 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: format
-                    qualifier: extent
+                    qualifier: medium
             -
               source_paths:
                 - //mods:mods/mods:language/mods:languageTerm
