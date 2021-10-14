@@ -15,6 +15,7 @@ use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeComman
 use UnbLibraries\IslandoraDspaceBridge\SubjectTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ThesisAdvisorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ThesisTypeTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\TitleTransformTrait;
 
 /**
  * Provides commands to convert Islandora exports into Simple Archive Format.
@@ -29,6 +30,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   use SubjectTransformTrait;
   use ThesisAdvisorTransformTrait;
   use ThesisTypeTransformTrait;
+  use TitleTransformTrait;
 
   /**
    * The current operation's item source path.

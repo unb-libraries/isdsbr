@@ -3,40 +3,23 @@
 namespace UnbLibraries\IslandoraDspaceBridge;
 
 /**
- * Provides methods to transform MODS author elements into DC values.
+ * Provides methods to transform MODS title elements into DC values.
  */
-trait AuthorTransformTrait {
+trait TitleTransformTrait {
 
-  private function transformAuthor() {
+  private function transformTitle() {
     foreach ($this->targetItemElements as $element) {
-      if ($this->nameElementIsAuthor($element)) {
-        $given_name = $this->getFirstChildElementValueByNameAttr($element, 'namePart', 'type', 'given');
-        $family_name = $this->getFirstChildElementValueByNameAttr($element, 'namePart', 'type', 'family');
-        if (!empty($given_name) && !empty($family_name)) {
-          $this->targetItemValues[] = $this->formatAuthorName($given_name, $family_name);
-        }
+      $title_value = '';
+      $this->addLogNotice('Parsing title values');
+      foreach ($element->getElementsByTagName('mods:title') as $spec_element) {
+        $this->addLogNotice('Found Title!');
+        $title_value = $spec_element->textContent;
       }
-    }
-  }
-
-  private static function formatAuthorName($given_name, $family_name) {
-    return "$family_name, $given_name";
-  }
-
-  private function nameElementIsAuthor($element) {
-    if ($element->hasAttribute('type') && $element->getAttribute('type') == 'personal') {
-      if ($this->roleElementIsAuthor($element)) {
-        return TRUE;
+      foreach ($element->getElementsByTagName('mods:subTitle') as $spec_element) {
+        $this->addLogNotice('Found SubTitle!');
+        $title_value = $title_value . ' | ' . $spec_element->textContent;
       }
-    }
-    return FALSE;
-  }
-
-  private static function roleElementIsAuthor($element) {
-    $role_element = $element->getElementsByTagName('role')->item(0);
-    $role_value = trim($role_element->textContent);
-    if ($role_value == 'author') {
-      return TRUE;
+      $this->targetItemValues[] = $title_value;
     }
   }
 
