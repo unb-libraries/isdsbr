@@ -112,7 +112,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
       $this->dspaceTargetCollectionHandle = file_get_contents($this->importPath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME);
       $this->importZipFileName = "isdsbr_{$this->importTimeStamp}.zip";
       $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/{$this->importZipFileName}";
-      $this->importMapFileName = "dspace_import_map-$import_slug-" . $this->importTimeStamp . '.txt';
+      $this->importMapFileName = 'dspace_import_map-' . $this->importTimeStamp . "-$import_slug.txt";
       $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
       $this->initImport();
       $this->validateImportFolder();
