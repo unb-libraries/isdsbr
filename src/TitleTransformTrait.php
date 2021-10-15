@@ -28,7 +28,7 @@ trait TitleTransformTrait {
           $final_string .= ": $subtitle_string";
         }
       }
-      $this->targetItemValues[] = implode(" ", $title_values);
+      $this->targetItemValues[] = $final_string;
     }
   }
 
