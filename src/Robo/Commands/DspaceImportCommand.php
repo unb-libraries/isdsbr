@@ -97,10 +97,12 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    * @throws \Exception
    *
    * @command isdsbr:import
+   * @TODO Clean this nonsense up.
    */
   public function dspaceImportData($path, $kubectl_pod_id, $kubectl_deployment_env, $options = ['yes' => FALSE]) {
     $this->dspacePodNamespace = $kubectl_deployment_env;
     $this->dspacePodId = $kubectl_pod_id;
+    $this->importTimeStamp = time();
 
     $dir_finder = new Finder();
     $dir_finder->directories()->in($path)->depth(0);
@@ -108,7 +110,6 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
       $this->importPath = $import_dir->getPathname();
       $import_slug = $import_dir->getFilename();
       $this->dspaceTargetCollectionHandle = file_get_contents($this->importPath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME);
-      $this->importTimeStamp = time();
       $this->importZipFileName = "isdsbr_{$this->importTimeStamp}.zip";
       $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/{$this->importZipFileName}";
       $this->importMapFileName = "dspace_import_map-$import_slug-" . $this->importTimeStamp . '.txt';
