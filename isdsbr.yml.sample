@@ -1,8 +1,20 @@
 isdsbr:
   collections:
-    theses_dissertations:
-      label: Theses and Dissertations
-      query: q=RELS_EXT_hasModel_uri_ms%3A%22info%3Afedora%2Fir%3AthesisCModel%22%0Amods_genre_s%3A%22Thesis+%2F+Dissertation%22
+    history_theses_dissertations:
+      label: History Department Theses and Dissertations
+      query: q=mods_genre_s%3A%22Thesis+%2F+Dissertation%22+AND%0Amods_extension_unbfacetInfo_unbDepartmentName_t%3A%22history%22+AND%0ARELS_EXT_hasModel_uri_ms%3A%22info%3Afedora%2Fir%3AthesisCModel%22
+      field_map: thesis
+      target_collection: 123456789/66
+    anthropology_theses_dissertations:
+      label: Anthropology Department Theses and Dissertations
+      query: q=mods_genre_s%3A%22Thesis+%2F+Dissertation%22+AND%0Amods_extension_unbfacetInfo_unbDisciplineName_s%3A%22Anthropology%22+AND%0ARELS_EXT_hasModel_uri_ms%3A%22info%3Afedora%2Fir%3AthesisCModel%22
+      field_map: thesis
+      target_collection: 123456789/66
+    biology_theses_dissertations:
+      label: History Department Theses and Dissertations
+      query: q=mods_genre_s%3A%22Thesis+%2F+Dissertation%22+AND%0Amods_extension_unbfacetInfo_unbDisciplineName_s%3A%22Biology%22+AND%0ARELS_EXT_hasModel_uri_ms%3A%22info%3Afedora%2Fir%3AthesisCModel%22
+      field_map: thesis
+      target_collection: 123456789/66
   fedora:
     admin_pass: xxxxxxxxxx
     admin_user: xxxxxxxxxx
