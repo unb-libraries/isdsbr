@@ -152,7 +152,7 @@ isdsbr:
                     qualifier: isbn
             -
               source_paths:
-                - //mods:mods/mods:note
+                - //mods:mods/mods:note[not(@type='statement of responsibility')]
               transform_callback: "transformLiteral"
               target_file: dublin_core
               target_path:
