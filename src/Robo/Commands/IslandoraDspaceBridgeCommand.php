@@ -12,7 +12,8 @@ use TrashPanda\ProgressBarLog\ProgressBarLog;
 class IslandoraDspaceBridgeCommand extends Tasks {
 
   const ISDSBR_EXPORT_DIR_IDENTIFIER = 'MODS.0.xml';
-  const ISDSBR_FIELD_MAPPING_FILENAME = 'isdsbr_field_map.txt';
+  const ISDSBR_FIELD_MAPPING_FILENAME = '.isdsbr_field_map';
+  const ISDSBR_TARGET_COLLECTION_FILENAME = '.isdsbr_target_collection';
 
   /**
    * The progress bar object for the current import.

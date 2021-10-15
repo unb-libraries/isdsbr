@@ -88,8 +88,6 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    *   The DSpace pod ID to target
    * @param string $kubectl_deployment_env
    *   The DSpace deployment environment
-   * @param string $target_collection_handle
-   *   The DSpace collection to import to
    * @param string[] $options
    *   The array of available CLI options.
    *
@@ -100,24 +98,30 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @command isdsbr:import
    */
-  public function dspaceImportData($path, $kubectl_pod_id, $kubectl_deployment_env, $target_collection_handle, $options = ['yes' => FALSE]) {
-    $this->importPath = $path;
+  public function dspaceImportData($path, $kubectl_pod_id, $kubectl_deployment_env, $options = ['yes' => FALSE]) {
     $this->dspacePodNamespace = $kubectl_deployment_env;
     $this->dspacePodId = $kubectl_pod_id;
-    $this->dspaceTargetCollectionHandle = $target_collection_handle;
-    $this->importTimeStamp = time();
-    $this->importZipFileName = "isdsbr_{$this->importTimeStamp}.zip";
-    $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/{$this->importZipFileName}";
-    $this->importMapFileName = 'dspace_import_map_' . $this->importTimeStamp . '.txt';
-    $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
-    
-    $this->initImport();
-    $this->validateImportFolder();
-    $this->archiveImportFolder();
-    $this->copyArchiveToContainer();
-    $this->importContainerArchive();
-    $this->executeFilterMedia();
-    $this->copyMapFile();
+
+    $dir_finder = new Finder();
+    $dir_finder->directories()->in($path)->depth(0);
+    foreach ($dir_finder as $import_dir) {
+      $this->importPath = $import_dir->getPathname();
+      $import_slug = $import_dir->getFilename();
+      $this->dspaceTargetCollectionHandle = file_get_contents($this->importPath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME);
+      $this->importTimeStamp = time();
+      $this->importZipFileName = "isdsbr_{$this->importTimeStamp}.zip";
+      $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/{$this->importZipFileName}";
+      $this->importMapFileName = "dspace_import_map-$import_slug-" . $this->importTimeStamp . '.txt';
+      $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
+      $this->initImport();
+      $this->validateImportFolder();
+      $this->archiveImportFolder();
+      $this->copyArchiveToContainer();
+      $this->importContainerArchive();
+      $this->executeFilterMedia();
+      $this->copyMapFile();
+    }
+
   }
 
   /**
@@ -211,8 +215,8 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Reverts a previously imported set of data using a local mapfile.
    *
-   * @param string $timestamp
-   *   The timestamp of the import to revert.
+   * @param string $map_filepath
+   *   The filepath of the mapfile to revert.
    * @param string $kubectl_pod_id
    *   The DSpace pod ID to target
    * @param string $kubectl_deployment_env
@@ -225,12 +229,11 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @command isdsbr:import:revert
    */
-  public function dspaceRevertImport($timestamp, $kubectl_pod_id, $kubectl_deployment_env, $options = ['yes' => FALSE]) {
+  public function dspaceRevertImport($map_filepath, $kubectl_pod_id, $kubectl_deployment_env, $options = ['yes' => FALSE]) {
     $this->dspacePodNamespace = $kubectl_deployment_env;
     $this->dspacePodId = $kubectl_pod_id;
-    $this->importTimeStamp = $timestamp;
-    $this->importMapFileName = 'dspace_import_map_' . $this->importTimeStamp . '.txt';
-    $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
+    $this->importMapFileName = basename($map_filepath);
+    $this->importLocalMapPath = $map_filepath;
     $this->copyMapFileToContainer();
     $this->revertImport();
   }
@@ -240,7 +243,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    */
   private function copyMapFileToContainer() {
     $this->io()->title('Copying Map File To Local');
-    $cmd = "kubectl cp {$this->importLocalMapPath}/{$this->importMapFileName} {$this->dspacePodId}:/tmp/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
+    $cmd = "kubectl cp {$this->importLocalMapPath} {$this->dspacePodId}:/tmp/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
     $this->say($cmd);
     passthru($cmd);
   }

@@ -193,6 +193,9 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
       // Write mapping format.
       file_put_contents($operation_export_path . '/' . self::ISDSBR_FIELD_MAPPING_FILENAME, $operation['collection']['field_map']);
 
+      // Write target collection filename.
+      file_put_contents($operation_export_path . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME, $operation['collection']['target_collection']);
+
       // Finish up.
       $this->progressBar->finish();
       $this->io()->newLine(2);

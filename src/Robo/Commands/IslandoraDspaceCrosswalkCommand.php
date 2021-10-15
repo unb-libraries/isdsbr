@@ -241,6 +241,17 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   }
 
   /**
+   * Copies the target collection info to the output path.
+   */
+  private function copyTargetCollectionFile() {
+    $source_file = $this->curOperationSourcePath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME;
+    $operation_basename = basename($this->curOperationSourcePath);
+    $operation_target_dir = $this->targetPath . "/$operation_basename";
+    $output_file = $operation_target_dir . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME;
+    copy($source_file, $output_file);
+  }
+
+  /**
    * Initializes and sets up the current import operation.
    *
    * @throws \Exception
@@ -250,6 +261,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
     $this->setupCurOperationStyle();
     $this->setupCurOperationFiles();
     $this->setupCurOperationBaseDir();
+    $this->copyTargetCollectionFile();
   }
 
   /**
