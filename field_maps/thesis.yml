@@ -272,17 +272,17 @@ isdsbr:
             -
               source_paths:
                 - //mods:mods/mods:recordInfo/mods:recordChangeDate
-              transform_callback: "transform8601Date"
+              transform_callback: "transform8601DateDefaultNow"
               target_file: dublin_core
               target_path:
                 - name: dcvalue
                   attributes:
                     element: date
-                    qualifier: modified
+                    qualifier: updated
             -
               source_paths:
                 - //mods:mods/mods:recordInfo/mods:recordCreationDate
-              transform_callback: "transform8601Date"
+              transform_callback: "transform8601DateDefaultNow"
               target_file: dublin_core
               target_path:
                 - name: dcvalue

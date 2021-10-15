@@ -7,12 +7,14 @@ namespace UnbLibraries\IslandoraDspaceBridge;
  */
 trait DateTransformTrait {
 
-  private function transform8601Date() {
+  private function transform8601DateDefaultNow() {
     foreach ($this->targetItemElements as $element) {
       $mods_value = trim($element->textContent);
       if (!empty($mods_value)) {
         $timestamp = strtotime($mods_value);
         $this->targetItemValues[] = date('c', $timestamp);
+      } else {
+        $this->targetItemValues[] = date('c', strtotime("now"));
       }
     }
   }
