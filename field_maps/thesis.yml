@@ -22,7 +22,7 @@ isdsbr:
           elements:
             -
               source_paths:
-                - //mods:mods/mods:titleInfo
+                - //mods:mods/mods:titleInfo[not(@type='alternative')]
               transform_callback: "transformTitle"
               target_file: dublin_core
               target_path:
