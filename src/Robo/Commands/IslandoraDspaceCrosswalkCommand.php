@@ -454,6 +454,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   private function writeTargetItemBitstreamFiles() {
     $this->targetItemContents = [];
     $this->writePDFFile();
+    $this->writeMODSFile();
     $this->writeContentsFile();
   }
 
@@ -462,6 +463,13 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    */
   private function writePDFFile() {
     $this->copyItemFile('PDF.0.pdf', 'item.pdf', "\tprimary:true");
+  }
+
+  /**
+   * Writes out the current item's MODS file into the SAF directory.
+   */
+  private function writeMODSFile() {
+    $this->copyItemFile('MODS.0.xml', 'MODS.xml', "\tbundle:ISLANDORA\tpermissions:-r 'Anonymous'");
   }
 
   /**
