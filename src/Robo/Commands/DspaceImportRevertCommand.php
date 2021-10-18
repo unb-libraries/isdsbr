@@ -61,6 +61,7 @@ class DspaceImportRevertCommand extends IslandoraDspaceBridgeCommand {
     $this->importMapFileName = basename($map_filepath);
     $this->importLocalMapPath = $map_filepath;
     $this->copyMapFileToContainer();
+    $this->io()->newLine();
     $this->revertImport();
   }
 
@@ -68,7 +69,7 @@ class DspaceImportRevertCommand extends IslandoraDspaceBridgeCommand {
    * Copies a local map file to the k8s container.
    */
   private function copyMapFileToContainer() {
-    $this->io()->title('Copying Map File To Local');
+    $this->io()->title('Copying Map File To k8s pod...');
     $cmd = "kubectl cp {$this->importLocalMapPath} {$this->dspacePodId}:/tmp/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
     $this->say($cmd);
     passthru($cmd);
@@ -78,7 +79,7 @@ class DspaceImportRevertCommand extends IslandoraDspaceBridgeCommand {
    * Reverts a previously imported set of content.
    */
   private function revertImport() {
-    $this->io()->title('Reverting Import');
+    $this->io()->title('Reverting Import...');
     $dspace_bin = self::DSPACE_BIN_PATH;
     $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --eperson=" . self::DSPACE_ADMIN_USER . " -d -m /tmp/{$this->importMapFileName}";
     $this->say($cmd);
