@@ -506,6 +506,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *   The identifier to use in the SAF contents file.
    */
   private function copyItemFile($source_name, $target_name, $identifier = NULL) {
+    $this->addLogNotice("Copying: $source_name -> $target_name");
     if (file_exists($this->curOperationItemSourcePath . "/$source_name")) {
       copy (
         $this->curOperationItemSourcePath . "/$source_name",
