@@ -41,6 +41,19 @@ trait DepartmentGrantorTransformTrait {
     }
   }
 
+  private function transformGrantorInstitutionOnly() {
+    foreach ($this->targetItemElements as $element) {
+      if ($this->nameElementIsGrantor($element)) {
+        $names = $this->getChildElementValuesByNameAttr($element, 'namePart');
+        foreach ($names as $name) {
+          if (!empty($name) && $this->grantorIsInstitution($name)) {
+            $this->targetItemValues[] = rtrim($name, '.');
+          }
+        }
+      }
+    }
+  }
+
   private function grantorIsInstitution($grantor) {
     if (str_contains(strtolower($grantor), 'university of new brunswick')) {
       return TRUE;

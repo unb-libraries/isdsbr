@@ -252,15 +252,6 @@ isdsbr:
                     qualifier: issued
             -
               source_paths:
-                - //mods:mods
-              transform_callback: "getLiteralUNBPublisher"
-              target_file: dublin_core
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: publisher
-            -
-              source_paths:
                 - //mods:mods/mods:location/mods:url
               transform_callback: "transformLiteral"
               target_file: dublin_core
@@ -309,6 +300,15 @@ isdsbr:
                   attributes:
                     element: degree
                     qualifier: 'grantor'
+            -
+              source_paths:
+                - //mods:mods/mods:name[@type='corporate']
+              transform_callback: "transformGrantorInstitutionOnly"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: publisher
             -
               source_paths:
                 - //mods:mods/mods:name[@type='corporate']
