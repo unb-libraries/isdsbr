@@ -8,8 +8,6 @@ use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeComman
 
 /**
  * Provides commands to export objects from Islandora/Fedora based on a solr query.
- *
- * @TODO Documentation.
  */
 class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
 
@@ -17,33 +15,98 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   const SOLR_INT_MAX = 10;
 
   /**
-   * @var array
+   * The collections to export.
+   *
+   * @var string[]
    */
-  protected $operations = [];
+  protected $exportCollections;
 
   /**
+   * The fedora commons instance admin password.
+   *
+   * @var string
+   */
+  protected $exportFedoraAdminPass;
+
+  /**
+   * The fedora commons instance admin username.
+   *
+   * @var string
+   */
+  protected $exportFedoraAdminUser;
+
+  /**
+   * The fedora commons export format to use.
+   *
+   * @var string
+   */
+  protected $exportFedoraFormat;
+
+  /**
+   * The path to fedora commons home on the remote instance.
+   *
+   * @var string
+   */
+  protected $exportFedoraHome;
+
+  /**
+   * The path to Java home on the remote instance.
+   *
+   * @var string
+   */
+  protected $exportFedoraJavaHome;
+
+  /**
+   * The fedora commons instance remote hostname.
+   *
+   * @var string
+   */
+  protected $exportIslandoraHostname;
+
+  /**
+   * The path to write the export.
+   *
+   * @var string
+   */
+  protected $exportPath = NULL;
+
+  /**
+   * The core name for the solr instance to leverage.
+   *
+   * @var string
+   */
+  protected $exportSolrCoreName;
+
+  /**
+   * The hostname of the solr instance to leverage.
+   *
+   * @var string
+   */
+  protected $exportSolrHostname;
+
+  /**
+   * The URI path of the solr instance to leverage.
+   *
+   * @var string
+   */
+  protected $exportSolrUri;
+
+  /**
+   * Items that need their files/metadata manually copied.
+   *
    * @var array
    */
   protected $needManualCopy = [];
 
   /**
-   * @var string
+   * The export operations to perform.
+   *
+   * @var array
    */
-  protected $exportPath = NULL;
-
-  protected $exportCollections;
-  protected $exportIslandoraHostname;
-  protected $exportSolrHostname;
-  protected $exportSolrUri;
-  protected $exportSolrCoreName;
-  protected $exportFedoraJavaHome;
-  protected $exportFedoraHome;
-  protected $exportFedoraAdminUser;
-  protected $exportFedoraAdminPass;
-  protected $exportFedoraFormat;
+  protected $operations = [];
 
   /**
-   * Export objects from Islandora/Fedora based on a solr query.
+   * Exports objects from Islandora/Fedora based on a solr query.
    *
    * @param string $path
    *   The path to export the objects to.
@@ -62,7 +125,10 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   }
 
   /**
-   * @param $path
+   * Initializes the export paths/values.
+   *
+   * @param string $path
+   *   The path to export the objects.
    *
    * @throws \Exception
    */
@@ -71,6 +137,14 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     $this->setUpConfigValues();
   }
 
+  /**
+   * Sets up the export path.
+   *
+   * @param string $path
+   *   The path to export the objects.
+   *
+   * @throws \Exception
+   */
   protected function setUpExportPath($path) {
     $this->exportPath = $path;
     if ( $this->exportPath == NULL || !is_writable($this->exportPath)) {
@@ -83,6 +157,9 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     }
   }
 
+  /**
+   * Sets up the configuration values necessary for the export.
+   */
   protected function setUpConfigValues() {
     $this->exportCollections = Robo::Config()->get('isdsbr.collections');
     $this->exportIslandoraHostname = Robo::Config()->get('isdsbr.fedora.hostname');
@@ -97,12 +174,15 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   }
 
   /**
-   *
+   * Sets up operations necessary for the export.
    */
   protected function setUpOperations() {
     $this->doObjectDiscovery();
   }
 
+  /**
+   * Does object discovery: determine what items are to be exported.
+   */
   protected function doObjectDiscovery() {
     $this->addLogTitle('Object Discovery');
     foreach ($this->exportCollections as $collection_id => $collection) {
@@ -127,6 +207,14 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     }
   }
 
+  /**
+   * Gets PIDs of an Fedora/Islandora instance that match a solr query.
+   *
+   * @param string $query
+   *   The query to use.
+   *
+   * @return false|string[]
+   */
   protected function getPidsFromQuery($query) {
     $query_uri = sprintf(
       "%s/%s/select?%s&rows=%s&fl=PID&wt=csv&indent=true",
@@ -152,12 +240,26 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     );
   }
 
+  /**
+   * Parses a solr query result string for the PIDs contained within.
+   *
+   * @param string $result_string
+   *   The result of the solr query to parse.
+   *
+   * @return FALSE|string[]
+   *   The PIDs contained within the result string. FALSE if no result.
+   */
   protected function getPidsFromResult($result_string) {
     $results = explode("\n", $result_string);
     array_shift($results);
     return $results;
   }
 
+  /**
+   * Exports all queued operations.
+   *
+   * @throws \Exception
+   */
   protected function exportObjects() {
     $this->addLogTitle('Object Export');
     foreach ($this->operations as $operation_idx => $operation) {
@@ -170,7 +272,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
 
       foreach ($operation['pid_list'] as $pid) {
         $this->addLogNotice("[{$this->exportIslandoraHostname}] Exporting PID $pid...");
-        $export_file = $this->exportIslandoraItem($pid, $operation);
+        $export_file = $this->exportIslandoraItem($pid);
         $file_info = pathinfo($export_file);
         $temp_dir = $this->tempdir();
         $archive_path = "$temp_dir/{$file_info['filename']}";
@@ -209,37 +311,132 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   }
 
   /**
-   * Delete an entire tree, including files.
+   * Exports a Fedora commons item from its repository.
    *
-   * @author StackOverflow
-   * @link https://stackoverflow.com/questions/4366730/how-do-i-check-if-a-string-contains-a-specific-word
+   * @param string $pid
+   *   The PID of the object to export.
    *
-   * @param $dir
-   *
-   * @return bool|null
+   * @return string
+   *   The path to the exported item archive.
    */
-  public static function delTree($dir) {
-    if (strpos($dir, '/tmp') !== false) {
-      $files = array_diff(scandir($dir), ['.', '..']);
-      foreach ($files as $file) {
-        (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file");
-      }
-      return rmdir($dir);
-    }
-    return NULL;
+  protected function exportIslandoraItem($pid) {
+    return $this->generateExportArchive($pid);
   }
 
   /**
-   * Copy files from one directory to another, recursively.
+   * Generates an export archive on a remote instance of a Fedora item.
    *
-   * @author      Aidan Lister <aidan@php.net>
-   * @link        http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
+   * @param string $pid
+   *   The PID to export.
    *
-   * @param $source
-   * @param $dest
-   * @param int $permissions
+   * @return string
+   *   The path to the exported archive.
+   */
+  protected function generateExportArchive($pid) {
+    $export_command = sprintf(
+      'JAVA_HOME=%s FEDORA_HOME=%s ./fedora-export.sh localhost:8080 %s %s %s %s migrate /tmp http',
+      $this->exportFedoraJavaHome,
+      $this->exportFedoraHome,
+      $this->exportFedoraAdminUser,
+      $this->exportFedoraAdminPass,
+      $pid,
+      $this->exportFedoraFormat
+    );
+    $fedora_bin_dir = $this->exportFedoraHome . '/client/bin';
+    $result = $this->taskSshExec($this->exportIslandoraHostname)
+      ->exec($export_command)
+      ->remoteDir($fedora_bin_dir)
+      ->forcePseudoTty()
+      ->silent(TRUE)
+      ->run();
+    return $this->getPathToArchive($result);
+  }
+
+  /**
+   * Determines the path that Fedora used to export the archive.
+   *
+   * @param string $result
+   *   The result string from the Fedora export.
+   *
+   * @return string
+   *   The path to the exported archive.
+   */
+  protected function getPathToArchive($result) {
+    $message = $result->getMessage();
+    preg_match('/Exporting .* to (.*)/', $message, $matches);
+    return $matches[1];
+  }
+
+  /**
+   * Creates a temporary directory to use in processing.
+   *
+   * @return string
+   *   The path to the temporary directory.
+   *
+   * @throws \Exception
+   */
+  protected function tempdir() {
+    $tempfile = tempnam(sys_get_temp_dir(),'');
+    if (file_exists($tempfile)) { unlink($tempfile); }
+    mkdir($tempfile);
+    if (is_dir($tempfile)) { return $tempfile; }
+    throw new Exception("Failure to create a temporary directory.");
+  }
+
+  /**
+   * Transfers an object archive from the remote instance to local.
+   *
+   * @param string $export_file
+   *   The remote export file to transfer.
+   * @param string $archive_path
+   *   The local path to target.
+   */
+  protected function transferObjectArchive($export_file, $archive_path) {
+    $this->taskRsync()
+      ->fromPath("chimera:$export_file")
+      ->toPath($archive_path)
+      ->silent(TRUE)
+      ->run();
+  }
+
+  /**
+   * Extracts an object archive from its ZIP format.
+   *
+   * @param string $archive_path
+   *   The path to the object archive.
+   * @param string $temp_dir
+   *   The directory to extract to.
+   *
+   * @return string
+   *  The location of the extracted object archive.
+   */
+  protected function extractObjectArchive($archive_path, $temp_dir) {
+    $zip = new \ZipArchive;
+    if ($zip->open($archive_path) === TRUE) {
+      $zip->extractTo($temp_dir);
+      $zip->close();
+    } else {
+      $this->needManualCopy[] = $archive_path;
+    }
+    unlink($archive_path);
+    return($temp_dir);
+  }
+
+  /**
+   * Copies files from one directory to another, recursively.
+   *
+   * @author Aidan Lister <aidan@php.net>
+   * @link  http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
+   *
+   * @param string $source
+   *   The source path.
+   * @param string $dest
+   *   The destination path.
+   * @param string int $permissions
+   *   The (octal) permissions to apply to the files.
    *
    * @return bool
+   *   TRUE if the operation was successful, FALSE otherwise.
    */
   function xcopy($source, $dest, $permissions = 0755) {
     $sourceHash = $this->hashDirectory($source);
@@ -278,10 +475,13 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   }
 
   /**
-   * Copy a file, or recursively copy a folder and its contents
-   * @author      Aidan Lister <aidan@php.net>
-   * @version     1.0.1
-   * @link        http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
+   * Hashes a directory and its files.
+   *
+   * @author Aidan Lister <aidan@php.net>
+   * @link  http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
+   *
+   * @param string $directory
+   *   The source path.
    */
   function hashDirectory($directory){
     if (! is_dir($directory)){ return false; }
@@ -297,72 +497,27 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     return md5(implode('', $files));
   }
 
-  protected function exportIslandoraItem($pid, $operation) {
-    return $this->generateExportArchive($pid);
-  }
-
-  protected function transferObjectArchive($export_file, $archive_path) {
-    $this->taskRsync()
-      ->fromPath("chimera:$export_file")
-      ->toPath($archive_path)
-      ->silent(TRUE)
-      ->run();
-  }
-
-  protected function extractObjectArchive($archive_path, $temp_dir) {
-    $zip = new \ZipArchive;
-    if ($zip->open($archive_path) === TRUE) {
-      $zip->extractTo($temp_dir);
-      $zip->close();
-    } else {
-      $this->needManualCopy[] = $archive_path;
+  /**
+   * Deletes an entire tree, including files.
+   *
+   * @author StackOverflow
+   * @link https://stackoverflow.com/questions/4366730/how-do-i-check-if-a-string-contains-a-specific-word
+   *
+   * @param string $dir
+   *   The top of the tree to delete.
+   *
+   * @return bool|null
+   *   TRUE if the delete was successful.
+   */
+  public static function delTree($dir) {
+    if (strpos($dir, '/tmp') !== false) {
+      $files = array_diff(scandir($dir), ['.', '..']);
+      foreach ($files as $file) {
+        (is_dir("$dir/$file")) ? delTree("$dir/$file") : unlink("$dir/$file");
+      }
+      return rmdir($dir);
     }
-    unlink($archive_path);
-    return($temp_dir);
-  }
-
-  protected function generateExportArchive($pid) {
-    $export_command = sprintf(
-      'JAVA_HOME=%s FEDORA_HOME=%s ./fedora-export.sh localhost:8080 %s %s %s %s migrate /tmp http',
-      $this->exportFedoraJavaHome,
-      $this->exportFedoraHome,
-      $this->exportFedoraAdminUser,
-      $this->exportFedoraAdminPass,
-      $pid,
-      $this->exportFedoraFormat
-    );
-    $fedora_bin_dir = $this->exportFedoraHome . '/client/bin';
-    $result = $this->taskSshExec($this->exportIslandoraHostname)
-      ->exec($export_command)
-      ->remoteDir($fedora_bin_dir)
-      ->forcePseudoTty()
-      ->silent(TRUE)
-      ->run();
-    return $this->getPathToArchive($result);
-  }
-
-  /**
-   * @param $result
-   *
-   * @return mixed
-   */
-  protected function getPathToArchive($result) {
-    $message = $result->getMessage();
-    preg_match('/Exporting .* to (.*)/', $message, $matches);
-    return $matches[1];
-  }
-
-  /**
-   * @return false|string
-   *
-   * @throws \Exception
-   */
-  protected function tempdir() {
-    $tempfile = tempnam(sys_get_temp_dir(),'');
-    if (file_exists($tempfile)) { unlink($tempfile); }
-    mkdir($tempfile);
-    if (is_dir($tempfile)) { return $tempfile; }
-    throw new Exception("Failure to create a temporary directory.");
+    return NULL;
   }
 
 }
