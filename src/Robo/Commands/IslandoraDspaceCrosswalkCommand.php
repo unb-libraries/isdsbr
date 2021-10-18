@@ -330,7 +330,9 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * Converts the MODS metadata into DC format(s), appends to current item DOM.
    */
   private function convertAppentModsMetadata() {
-    $this->sourceItemCrawler = new Crawler(file_get_contents($this->curOperationItemSourcePath . '/MODS.0.xml'));
+    $latest_file = $this->getLatestIslandoraFile($this->curOperationItemSourcePath, 'MODS.*.xml');
+    $this->addLogNotice("Using File: $latest_file");
+    $this->sourceItemCrawler = new Crawler(file_get_contents($latest_file));
     foreach ($this->files as $metadata_id => $metadata_file) {
       $this->files[$metadata_id]['xml'] = new DomDocument($metadata_file['xml-version'], $metadata_file['xml-encoding']);
       $dc_element = $this->files[$metadata_id]['xml']->createElement('dublin_core');
@@ -341,6 +343,23 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
       }
       $this->files[$metadata_id]['dcelement'] = $dc_element;
     }
+  }
+
+  /**
+   * Determines the 'latest' file from a file mask.
+   *
+   * @param $source_path
+   *   The path to parse.
+   * @param $file_mask
+   *   The file mask to use.
+   *
+   * @return string
+   *   The latest filepath.
+   */
+  private function getLatestIslandoraFile($source_path, $file_mask) {
+    $numeric_files = glob($this->curOperationItemSourcePath . "/$file_mask");
+    sort($numeric_files);
+    return end($numeric_files);
   }
 
   /**
@@ -462,14 +481,18 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * Writes out the current item's main (PDF) file into the SAF directory.
    */
   private function writePDFFile() {
-    $this->copyItemFile('PDF.0.pdf', 'item.pdf', "\tprimary:true");
+    $latest_pdf = $this->getLatestIslandoraFile($this->curOperationItemSourcePath, 'PDF.*.pdf');
+    $latest_pdf_name = basename($latest_pdf);
+    $this->copyItemFile($latest_pdf_name, 'item.pdf', "\tprimary:true");
   }
 
   /**
    * Writes out the current item's MODS file into the SAF directory.
    */
   private function writeMODSFile() {
-    $this->copyItemFile('MODS.0.xml', 'MODS.xml', "\tbundle:ISLANDORA\tpermissions:-r 'Anonymous'");
+    $latest_mods = $this->getLatestIslandoraFile($this->curOperationItemSourcePath, 'MODS.*.xml');
+    $latest_mods_name = basename($latest_mods);
+    $this->copyItemFile($latest_mods_name, 'MODS.xml', "\tbundle:ISLANDORA\tpermissions:-r 'Anonymous'");
   }
 
   /**
