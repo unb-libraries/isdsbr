@@ -54,7 +54,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * The path to the Simple Archive Format root to import.
    *
-   * @var \Symfony\Component\Finder\SplFileInfo
+   * @var string
    */
   protected $importPath;
 
@@ -139,7 +139,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
         )
       );
     }
-    $import_slug = $this->importPath->getFilename();
+    $import_slug = basename($this->importPath);
     $this->dspaceTargetCollectionHandle = file_get_contents($this->importPath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME);
     $this->importZipFileName = "isdsbr_$this->importTimeStamp.zip";
     $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/$this->importZipFileName";
