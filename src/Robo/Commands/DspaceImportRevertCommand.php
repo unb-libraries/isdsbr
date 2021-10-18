@@ -47,15 +47,10 @@ class DspaceImportRevertCommand extends IslandoraDspaceBridgeCommand {
    *   The DSpace pod ID to target
    * @param string $kubectl_deployment_env
    *   The DSpace deployment environment
-   * @param string[] $options
-   *   The array of available CLI options.
-   *
-   * @option yes
-   *   Assume a yes response for all prompts.
    *
    * @command isdsbr:import:revert
    */
-  public function dspaceRevertImport($map_filepath, $kubectl_pod_id, $kubectl_deployment_env, $options = ['yes' => FALSE]) {
+  public function dspaceRevertImport($map_filepath, $kubectl_pod_id, $kubectl_deployment_env) {
     $this->dspacePodNamespace = $kubectl_deployment_env;
     $this->dspacePodId = $kubectl_pod_id;
     $this->importMapFileName = basename($map_filepath);
@@ -67,9 +62,15 @@ class DspaceImportRevertCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Copies a local map file to the k8s container.
    */
-  private function copyMapFileToContainer() {
+  protected function copyMapFileToContainer() {
     $this->addLogTitle('Copying Map File To k8s pod...');
-    $cmd = "kubectl cp {$this->importLocalMapPath} {$this->dspacePodId}:/tmp/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
+    $cmd = sprintf(
+      'kubectl cp %s %s:%s --namespace=%s',
+      $this->importLocalMapPath,
+      $this->dspacePodId,
+      $this->importMapFileName,
+      $this->dspacePodNamespace
+    );
     $this->say($cmd);
     passthru($cmd);
   }
@@ -77,10 +78,16 @@ class DspaceImportRevertCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Reverts a previously imported set of content.
    */
-  private function revertImport() {
+  protected function revertImport() {
     $this->addLogTitle('Reverting Import...');
-    $dspace_bin = self::DSPACE_BIN_PATH;
-    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --eperson=" . self::DSPACE_ADMIN_USER . " -d -m /tmp/{$this->importMapFileName}";
+    $cmd = sprintf(
+      'kubectl exec -t %s --namespace=%s -- %s import --eperson=%s -d -m /tmp/%s',
+      $this->dspacePodId,
+      $this->dspacePodNamespace,
+      self::DSPACE_BIN_PATH,
+      self::DSPACE_ADMIN_USER,
+      $this->importMapFileName
+    );
     $this->say($cmd);
     passthru($cmd);
   }

@@ -63,7 +63,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * The MODS->DC field mapping definitions.
    *
-   * @var string
+   * @var string[]
    */
   protected $mapStyle;
 
@@ -80,13 +80,6 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * @var \Symfony\Component\DomCrawler\Crawler
    */
   protected $sourceItemCrawler = NULL;
-
-  /**
-   * The path to the current MODS XML file being converted.
-   *
-   * @var string
-   */
-  protected $sourceItemPath = NULL;
 
   /**
    * The path to the current MODS bundle being converted.
@@ -145,18 +138,13 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *   The path to import the Islandora items from.
    * @param string $target_path
    *   The path to export the Simple Import Format items to.
-   * @param string[] $options
-   *   The array of available CLI options.
-   *
-   * @option yes
-   *   Assume a yes response for all prompts.
    *
    * @command isdsbr:crosswalk
    * @usage isdsbr:crosswalk /tmp/source /tmp/target
    *
    * @throws \Exception
    */
-  public function islandoraExportConvertToDspaceImport($source_path, $target_path, $options = ['yes' => FALSE]) {
+  public function islandoraExportConvertToDspaceImport($source_path, $target_path) {
     $this->sourcePath = $source_path;
     $this->targetPath = $target_path;
     $this->initOperations();
@@ -169,7 +157,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function initOperations() {
+  protected function initOperations() {
     if ( $this->targetPath == NULL || !is_writable($this->targetPath)) {
       throw new Exception(
         sprintf(
@@ -183,7 +171,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Sets up the list of operations (source items) to convert.
    */
-  private function setUpOperations() {
+  protected function setUpOperations() {
     $this->addLogTitle('Discovering Exported Objects');
     $dir_finder = new Finder();
     $dir_finder->in($this->sourcePath)->depth('0')->directories();
@@ -206,13 +194,12 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function generateDspaceImports() {
-    $this->addLogTitle('Converting Exported Objects');
+  protected function generateDspaceImports() {
     foreach ($this->operations as $this->curOperationSourcePath => $operation_paths) {
-      $this->addLogStrong($this->curOperationSourcePath);
+      $this->addLogTitle("Converting Exported Objects : $this->curOperationSourcePath");
       $this->initCurImportOperation();
       foreach ($operation_paths as $this->curOperationItemSourcePath) {
-        $this->addLogNotice('Converting ' . $this->curOperationItemSourcePath);
+        $this->addLogStrong('Converting ' . $this->curOperationItemSourcePath);
         $this->setTargetItemTargetPath();
         $this->convertAppentModsMetadata();
         foreach ($this->mappingStyle['elements'] as $map_element) {
@@ -232,7 +219,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Copies the target collection info to the output path.
    */
-  private function copyTargetCollectionFile() {
+  protected function copyTargetCollectionFile() {
     $source_file = $this->curOperationSourcePath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME;
     $operation_basename = basename($this->curOperationSourcePath);
     $operation_target_dir = $this->targetPath . "/$operation_basename";
@@ -245,7 +232,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function initCurImportOperation() {
+  protected function initCurImportOperation() {
     $this->targetItemCounter = 0;
     $this->setupCurOperationStyle();
     $this->setupCurOperationFiles();
@@ -258,7 +245,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function setupCurOperationStyle() {
+  protected function setupCurOperationStyle() {
     $this->setCurOperationMapStyle();
     $map_style_filepath = $this->curOperationSourcePath . '/' . self::ISDSBR_FIELD_MAPPING_FILENAME;
     if (empty($this->mapStyle)) {
@@ -275,7 +262,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Sets up the mapping style for the current import set operation.
    */
-  private function setCurOperationMapStyle() {
+  protected function setCurOperationMapStyle() {
     $map_style_file = $this->curOperationSourcePath . '/' . self::ISDSBR_FIELD_MAPPING_FILENAME;
     $map_style = file_get_contents($map_style_file);
     $field_map_file = file_get_contents(__DIR__ . "/../../../field_maps/$map_style.yml");
@@ -288,7 +275,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function setupCurOperationFiles() {
+  protected function setupCurOperationFiles() {
     $this->files = $this->mapStyle['files'];
     if (empty($this->files['dublin_core'])) {
       throw new Exception(
@@ -300,7 +287,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Sets up the base target directory for the current import operation.
    */
-  private function setupCurOperationBaseDir() {
+  protected function setupCurOperationBaseDir() {
     $operation_basename = basename($this->curOperationSourcePath);
     $operation_target_dir = $this->targetPath . "/$operation_basename";
     mkdir($operation_target_dir, 0755);
@@ -309,7 +296,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Sets up the target item path for the current item.
    */
-  private function setTargetItemTargetPath() {
+  protected function setTargetItemTargetPath() {
     $padded_counter_string = str_pad($this->targetItemCounter,4,'0',STR_PAD_LEFT);
     $operation_basename = basename($this->curOperationSourcePath);
     $this->targetItemTargetPath = $this->targetPath . "/$operation_basename/item_$padded_counter_string";    mkdir($this->targetItemTargetPath, 0755);
@@ -318,8 +305,8 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Converts the MODS metadata into DC format(s), appends to current item DOM.
    */
-  private function convertAppentModsMetadata() {
-    $latest_file = $this->getLatestIslandoraFile($this->curOperationItemSourcePath, 'MODS.*.xml');
+  protected function convertAppentModsMetadata() {
+    $latest_file = $this->getLatestIslandoraFile('MODS.*.xml');
     $this->addLogNotice("Metadata Source: $latest_file");
     $this->sourceItemCrawler = new Crawler(file_get_contents($latest_file));
     foreach ($this->files as $metadata_id => $metadata_file) {
@@ -337,15 +324,13 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Determines the 'latest' file from a file mask.
    *
-   * @param $source_path
-   *   The path to parse.
    * @param $file_mask
    *   The file mask to use.
    *
    * @return string
    *   The latest filepath.
    */
-  private function getLatestIslandoraFile($source_path, $file_mask) {
+  protected function getLatestIslandoraFile($file_mask) {
     $numeric_files = glob($this->curOperationItemSourcePath . "/$file_mask");
     sort($numeric_files);
     return end($numeric_files);
@@ -357,7 +342,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * @param \DOMElement $map_element
    *   The DOM element to map from MODS.
    */
-  private function setTargetItemElements($map_element) {
+  protected function setTargetItemElements($map_element) {
     $this->targetItemElements = [];
     $this->targetItemValues = [];
     foreach ($map_element['source_paths'] as $source_path) {
@@ -378,7 +363,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * @param array $map_item
    *   The item to map.
    */
-  private function createDCItems(&$map_item) {
+  protected function createDCItems(&$map_item) {
     $prev_node = $this->files[$map_item['target_file']]['dcelement'];
     $last_path_key = array_key_last($map_item['target_path']);
 
@@ -420,7 +405,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * @return mixed
    *   The element, either found or newly created.
    */
-  private function createGetElement(&$parent_node, $name, $attrs, $file_id) {
+  protected function createGetElement(&$parent_node, $name, $attrs, $file_id) {
     $existing = $this->searchChildElementsByName($parent_node, $name, $attrs);
     if (!empty($existing)) {
       $all_attr_match = TRUE;
@@ -448,7 +433,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Writes out the current item's target DC metadata file(s).
    */
-  private function writeTargetItemMetadataFiles() {
+  protected function writeTargetItemMetadataFiles() {
     foreach ($this->files as $metadata_id => $metadata_file) {
       $this->files[$metadata_id]['xml']->formatOutput = TRUE;
       $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
@@ -459,7 +444,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Writes out the current item's bitstream files into the SAF directory.
    */
-  private function writeTargetItemBitstreamFiles() {
+  protected function writeTargetItemBitstreamFiles() {
     $this->targetItemContents = [];
     $this->writePDFFile();
     $this->writeMODSFile();
@@ -469,8 +454,8 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Writes out the current item's main (PDF) file into the SAF directory.
    */
-  private function writePDFFile() {
-    $latest_pdf = $this->getLatestIslandoraFile($this->curOperationItemSourcePath, 'PDF.*.pdf');
+  protected function writePDFFile() {
+    $latest_pdf = $this->getLatestIslandoraFile('PDF.*.pdf');
     $latest_pdf_name = basename($latest_pdf);
     $this->copyItemFile($latest_pdf_name, 'item.pdf', "\tprimary:true");
   }
@@ -478,8 +463,8 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Writes out the current item's MODS file into the SAF directory.
    */
-  private function writeMODSFile() {
-    $latest_mods = $this->getLatestIslandoraFile($this->curOperationItemSourcePath, 'MODS.*.xml');
+  protected function writeMODSFile() {
+    $latest_mods = $this->getLatestIslandoraFile('MODS.*.xml');
     $latest_mods_name = basename($latest_mods);
     $this->copyItemFile($latest_mods_name, 'MODS.xml', "\tbundle:ISLANDORA\tpermissions:-r 'Anonymous'");
   }
@@ -494,7 +479,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * @param string $identifier
    *   The identifier to use in the SAF contents file.
    */
-  private function copyItemFile($source_name, $target_name, $identifier = NULL) {
+  protected function copyItemFile($source_name, $target_name, $identifier = NULL) {
     $this->addLogNotice("Copying: $source_name -> $target_name");
     if (file_exists($this->curOperationItemSourcePath . "/$source_name")) {
       copy (
@@ -508,26 +493,11 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Writes out the current item's 'contents' file into the SAF directory.
    */
-  private function writeContentsFile() {
+  protected function writeContentsFile() {
     if (!empty($this->targetItemContents)) {
-      $contents_filename = "{$this->targetItemTargetPath}/contents";
+      $contents_filename = "$this->targetItemTargetPath/contents";
       file_put_contents($contents_filename, implode("\n", $this->targetItemContents));
     }
-  }
-
-  /**
-   * Generates a DOMDocument from a string.
-   *
-   * @param string $source
-   *   The string to use.
-   *
-   * @return \DOMDocument
-   *   The generated object.
-   */
-  function getDoc($source) {
-    $doc = new DOMDocument;
-    $doc->loadxml($source);
-    return $doc;
   }
 
 }

@@ -2,10 +2,7 @@
 
 namespace UnbLibraries\IslandoraDspaceBridge\Robo\Commands;
 
-use Psr\Log\LogLevel;
-use Robo\Robo;
 use Robo\Tasks;
-use TrashPanda\ProgressBarLog\ProgressBarLog;
 
 /**
  * Provides commands to export convert and import Islandora objects into Dspace.

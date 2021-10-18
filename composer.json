@@ -11,6 +11,7 @@
   "require": {
     "consolidation/robo": "^3",
     "ext-dom": "*",
+    "ext-yaml": "*",
     "guzzlehttp/guzzle": "^6.3",
     "joshfraser/php-name-parser": "dev-master",
     "symfony/dom-crawler": "^3",

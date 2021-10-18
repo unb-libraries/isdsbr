@@ -66,12 +66,12 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function initExport($path) {
+  protected function initExport($path) {
     $this->setUpExportPath($path);
     $this->setUpConfigValues();
   }
 
-  private function setUpExportPath($path) {
+  protected function setUpExportPath($path) {
     $this->exportPath = $path;
     if ( $this->exportPath == NULL || !is_writable($this->exportPath)) {
       throw new Exception(
@@ -83,7 +83,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     }
   }
 
-  private function setUpConfigValues() {
+  protected function setUpConfigValues() {
     $this->exportCollections = Robo::Config()->get('isdsbr.collections');
     $this->exportIslandoraHostname = Robo::Config()->get('isdsbr.fedora.hostname');
     $this->exportSolrHostname = Robo::Config()->get('isdsbr.solr.hostname');
@@ -99,11 +99,11 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   /**
    *
    */
-  private function setUpOperations() {
+  protected function setUpOperations() {
     $this->doObjectDiscovery();
   }
 
-  private function doObjectDiscovery() {
+  protected function doObjectDiscovery() {
     $this->addLogTitle('Object Discovery');
     foreach ($this->exportCollections as $collection_id => $collection) {
       $this->addLogStrong($collection['label']);
@@ -127,7 +127,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     }
   }
 
-  private function getPidsFromQuery($query) {
+  protected function getPidsFromQuery($query) {
     $query_uri = sprintf(
       "%s/%s/select?%s&rows=%s&fl=PID&wt=csv&indent=true",
       $this->exportSolrUri,
@@ -152,13 +152,13 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     );
   }
 
-  private function getPidsFromResult($result_string) {
+  protected function getPidsFromResult($result_string) {
     $results = explode("\n", $result_string);
     array_shift($results);
     return $results;
   }
 
-  private function exportObjects() {
+  protected function exportObjects() {
     $this->addLogTitle('Object Export');
     foreach ($this->operations as $operation_idx => $operation) {
       $collection = $operation['collection'];
@@ -297,11 +297,11 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     return md5(implode('', $files));
   }
 
-  private function exportIslandoraItem($pid, $operation) {
+  protected function exportIslandoraItem($pid, $operation) {
     return $this->generateExportArchive($pid);
   }
 
-  private function transferObjectArchive($export_file, $archive_path) {
+  protected function transferObjectArchive($export_file, $archive_path) {
     $this->taskRsync()
       ->fromPath("chimera:$export_file")
       ->toPath($archive_path)
@@ -309,7 +309,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
       ->run();
   }
 
-  private function extractObjectArchive($archive_path, $temp_dir) {
+  protected function extractObjectArchive($archive_path, $temp_dir) {
     $zip = new \ZipArchive;
     if ($zip->open($archive_path) === TRUE) {
       $zip->extractTo($temp_dir);
@@ -321,7 +321,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     return($temp_dir);
   }
 
-  private function generateExportArchive($pid) {
+  protected function generateExportArchive($pid) {
     $export_command = sprintf(
       'JAVA_HOME=%s FEDORA_HOME=%s ./fedora-export.sh localhost:8080 %s %s %s %s migrate /tmp http',
       $this->exportFedoraJavaHome,
@@ -346,7 +346,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @return mixed
    */
-  private function getPathToArchive($result) {
+  protected function getPathToArchive($result) {
     $message = $result->getMessage();
     preg_match('/Exporting .* to (.*)/', $message, $matches);
     return $matches[1];
@@ -357,7 +357,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function tempdir() {
+  protected function tempdir() {
     $tempfile = tempnam(sys_get_temp_dir(),'');
     if (file_exists($tempfile)) { unlink($tempfile); }
     mkdir($tempfile);

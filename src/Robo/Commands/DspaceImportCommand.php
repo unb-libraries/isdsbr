@@ -54,7 +54,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * The path to the Simple Archive Format root to import.
    *
-   * @var string
+   * @var \Symfony\Component\Finder\SplFileInfo
    */
   protected $importPath;
 
@@ -80,7 +80,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   protected $importZipFilePath;
 
   /**
-   * Imports objects from a simple archive format tree to DSpace.
+   * Imports one or many objects from a simple archive format tree to DSpace.
    *
    * @param string $path
    *   The path to the Simple Archive Format tree.
@@ -88,18 +88,13 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    *   The DSpace pod ID to target
    * @param string $kubectl_deployment_env
    *   The DSpace deployment environment
-   * @param string[] $options
-   *   The array of available CLI options.
-   *
-   * @option yes
-   *   Assume a yes response for all prompts.
    *
    * @throws \Exception
    *
    * @command isdsbr:import
    * @TODO Clean this nonsense up.
    */
-  public function dspaceImportData($path, $kubectl_pod_id, $kubectl_deployment_env, $options = ['yes' => FALSE]) {
+  public function dspaceImportTree($path, $kubectl_pod_id, $kubectl_deployment_env) {
     $this->dspacePodNamespace = $kubectl_deployment_env;
     $this->dspacePodId = $kubectl_pod_id;
     $this->importTimeStamp = time();
@@ -107,29 +102,35 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
     $dir_finder = new Finder();
     $dir_finder->directories()->in($path)->depth(0);
     foreach ($dir_finder as $import_dir) {
-      $this->importPath = $import_dir->getPathname();
-      $import_slug = $import_dir->getFilename();
-      $this->dspaceTargetCollectionHandle = file_get_contents($this->importPath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME);
-      $this->importZipFileName = "isdsbr_{$this->importTimeStamp}.zip";
-      $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/{$this->importZipFileName}";
-      $this->importMapFileName = 'dspace_import_map-' . $this->importTimeStamp . "-$import_slug.txt";
-      $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
-      $this->initImport();
-      $this->validateImportFolder();
-      $this->archiveImportFolder();
-      $this->copyArchiveToContainer();
-      $this->importContainerArchive();
-      $this->executeFilterMedia();
-      $this->copyMapFile();
+      $this->dspaceImportItem($import_dir);
     }
   }
 
   /**
-   * Initializes the import's parameters and path.
+   * Imports a single Simple Archive Format item from a given path into k8s.
+   *
+   * @param \Symfony\Component\Finder\SplFileInfo $import_dir
+   *   The path to the Simple Archive Format tree.
    *
    * @throws \Exception
    */
-  private function initImport() {
+  protected function dspaceImportItem($import_dir) {
+    $this->importPath = $import_dir->getPathname();
+    $this->initImport();
+    $this->validateImportFolder();
+    $this->archiveImportFolder();
+    $this->copyArchiveToContainer();
+    $this->importContainerArchive();
+    $this->executeFilterMedia();
+    $this->copyMapFile();
+  }
+
+  /**
+   * Initializes the import's parameters and paths.
+   *
+   * @throws \Exception
+   */
+  protected function initImport() {
     if ($this->importPath == NULL || !is_writable($this->importPath)) {
       throw new Exception(
         sprintf(
@@ -138,6 +139,12 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
         )
       );
     }
+    $import_slug = $this->importPath->getFilename();
+    $this->dspaceTargetCollectionHandle = file_get_contents($this->importPath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME);
+    $this->importZipFileName = "isdsbr_$this->importTimeStamp.zip";
+    $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/$this->importZipFileName";
+    $this->importMapFileName = 'dspace_import_map-' . $this->importTimeStamp . "-$import_slug.txt";
+    $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
   }
 
   /**
@@ -145,10 +152,10 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @throws \Exception
    */
-  private function validateImportFolder() {
+  protected function validateImportFolder() {
     $finder = new Finder();
     $finder->files()->in($this->importPath)->name(self::EXPORT_DIR_IDENTIFIER);
-    foreach ($finder as $file) {
+    if ($finder->hasResults()) {
       return;
     }
     throw new Exception(
@@ -162,9 +169,9 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Archives the import folder's data into a single file.
    */
-  private function archiveImportFolder() {
+  protected function archiveImportFolder() {
     $this->addLogTitle('Archiving Files Prior to Transfer');
-    $cmd = "cd {$this->importPath}; zip -r {$this->importZipFilePath} *";
+    $cmd = "cd $this->importPath; zip -r $this->importZipFilePath *";
     $this->say($cmd);
     passthru($cmd);
   }
@@ -172,9 +179,15 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Copies the import's archive file to the k8s container.
    */
-  private function copyArchiveToContainer() {
+  protected function copyArchiveToContainer() {
     $this->addLogTitle('Copying Zip file to container');
-    $cmd = "kubectl --v=6 cp {$this->importZipFilePath} {$this->dspacePodId}:{$this->importZipFilePath} --namespace={$this->dspacePodNamespace}";
+    $cmd = sprintf(
+      'kubectl --v=6 cp %s %s:%s --namespace=%s',
+      $this->importZipFilePath,
+      $this->dspacePodId,
+      $this->importZipFilePath,
+      $this->dspacePodNamespace
+    );
     $this->say($cmd);
     passthru($cmd);
   }
@@ -182,11 +195,19 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Imports the import archive file into DSpace in the k8s pod.
    */
-  private function importContainerArchive() {
+  protected function importContainerArchive() {
     $this->addLogTitle('Importing Archive Format');
-    $dspace_bin = self::DSPACE_BIN_PATH;
-    $mapfile = '/tmp/' . $this->importMapFileName;
-    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --add --collection={$this->dspaceTargetCollectionHandle} --eperson=" . self::DSPACE_ADMIN_USER . " --source=" . self::IMPORT_ZIP_PATH . " --zip={$this->importZipFileName} --mapfile=$mapfile";
+    $cmd = sprintf(
+      'kubectl exec -t %s --namespace=%s -- %s import --add --collection=%s --eperson=%s --source=%s --zip=%s --mapfile=%s',
+      $this->dspacePodId,
+      $this->dspacePodNamespace,
+      self::DSPACE_BIN_PATH,
+      $this->dspaceTargetCollectionHandle,
+      self::DSPACE_ADMIN_USER,
+      self::IMPORT_ZIP_PATH,
+      $this->importZipFileName,
+      '/tmp/' . $this->importMapFileName
+    );
     $this->say($cmd);
     passthru($cmd);
   }
@@ -194,10 +215,15 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Executes the filter-media command in the k8s pod on the target collection.
    */
-  private function executeFilterMedia() {
+  protected function executeFilterMedia() {
     $this->addLogTitle('Executing dspace filter-media on collection');
-    $dspace_bin = self::DSPACE_BIN_PATH;
-    $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin filter-media -i {$this->dspaceTargetCollectionHandle}";
+    $cmd = sprintf(
+      'kubectl exec -t %s --namespace=%s -- %s filter-media -i %s',
+      $this->dspacePodId,
+      $this->dspacePodNamespace,
+      self::DSPACE_BIN_PATH,
+      $this->dspaceTargetCollectionHandle
+    );
     $this->say($cmd);
     passthru($cmd);
   }
@@ -205,9 +231,16 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   /**
    * Copies a previously generated map file to the k8s pod.
    */
-  private function copyMapFile() {
+  protected function copyMapFile() {
     $this->addLogTitle('Copying Map File To Local');
-    $cmd = "kubectl cp {$this->dspacePodId}:/tmp/{$this->importMapFileName} {$this->importLocalMapPath}/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
+    $cmd = sprintf(
+      'kubectl cp %s:/tmp/%s %s/%s --namespace=%s',
+      $this->dspacePodId,
+      $this->importMapFileName,
+      $this->importLocalMapPath,
+      $this->importMapFileName,
+      $this->dspacePodNamespace
+    );
     $this->say($cmd);
     passthru($cmd);
   }
