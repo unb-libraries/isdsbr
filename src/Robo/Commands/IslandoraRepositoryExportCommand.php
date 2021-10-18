@@ -111,14 +111,11 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    * @param string $path
    *   The path to export the objects to.
    *
-   * @option yes
-   *   Assume a yes response for all prompts.
-   *
    * @throws \Exception
    *
    * @command isdsbr:export
    */
-  public function islandoraExportToLocal($path, $options = ['yes' => FALSE]) {
+  public function islandoraExportToLocal($path) {
     $this->initExport($path);
     $this->setUpOperations();
     $this->exportObjects();
@@ -438,7 +435,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    * @return bool
    *   TRUE if the operation was successful, FALSE otherwise.
    */
-  function xcopy($source, $dest, $permissions = 0755) {
+  protected function xcopy($source, $dest, $permissions = 0755) {
     $sourceHash = $this->hashDirectory($source);
     // Check for symlinks
     if (is_link($source)) {
@@ -483,7 +480,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    * @param string $directory
    *   The source path.
    */
-  function hashDirectory($directory){
+  protected function hashDirectory($directory){
     if (! is_dir($directory)){ return false; }
     $files = array();
     $dir = dir($directory);
@@ -509,7 +506,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    * @return bool|null
    *   TRUE if the delete was successful.
    */
-  public static function delTree($dir) {
+  protected static function delTree($dir) {
     if (strpos($dir, '/tmp') !== false) {
       $files = array_diff(scandir($dir), ['.', '..']);
       foreach ($files as $file) {
