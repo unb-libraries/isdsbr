@@ -193,7 +193,7 @@ isdsbr:
             -
               source_paths:
                 - //mods:mods/mods:subject[@authority='lcsh']/mods:topic
-              transform_callback: "transformSubject"
+              transform_callback: "transformLiteral"
               target_file: dublin_core
               target_path:
                 - name: dcvalue
@@ -203,7 +203,7 @@ isdsbr:
             -
               source_paths:
                 - //mods:mods/mods:subject[@authority='cash']/mods:topic
-              transform_callback: "transformSubject"
+              transform_callback: "transformLiteral"
               target_file: dublin_core
               target_path:
                 - name: dcvalue
@@ -252,8 +252,8 @@ isdsbr:
                     qualifier: issued
             -
               source_paths:
-                - //mods:mods/mods:originInfo/mods:publisher
-              transform_callback: "transformLiteral"
+                - //mods:mods
+              transform_callback: "getLiteralUNBPublisher"
               target_file: dublin_core
               target_path:
                 - name: dcvalue
@@ -321,7 +321,7 @@ isdsbr:
                     qualifier: 'department'
             -
               source_paths:
-                - //mods:mods/mods:extension/etd:degree/etd:level
+                - //mods:mods/mods:extension/mods:degree/etd:level
               transform_callback: "transformLiteral"
               target_file: dc_thesis
               target_path:
@@ -331,7 +331,7 @@ isdsbr:
                     qualifier: 'level'
             -
               source_paths:
-                - //mods:mods/mods:extension/etd:degree/etd:name
+                - //mods:mods/mods:extension/mods:degree/etd:name
               transform_callback: "transformLiteral"
               target_file: dc_thesis
               target_path:
@@ -370,11 +370,12 @@ isdsbr:
               source_paths:
                 - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDisciplineName
               transform_callback: "transformLiteral"
-              target_file: dc_unb
+              target_file: dublin_core
               target_path:
                 - name: dcvalue
                   attributes:
-                    element: discipline
+                    element: subject
+
             -
               source_paths:
                 - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbFacultyName
@@ -411,3 +412,12 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: scholarLevel
+            -
+              source_paths:
+                - //mods:mods
+              transform_callback: "getLiteralMimeType"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: format
