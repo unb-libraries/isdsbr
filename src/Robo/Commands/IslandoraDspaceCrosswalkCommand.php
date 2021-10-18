@@ -11,6 +11,7 @@ use UnbLibraries\IslandoraDspaceBridge\DateTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DepartmentGrantorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\LiteralUnbPublisherTrait;
 use UnbLibraries\IslandoraDspaceBridge\MimeTypeTrait;
 use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeCommand;
 use UnbLibraries\IslandoraDspaceBridge\SubjectTransformTrait;
@@ -28,6 +29,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   use DepartmentGrantorTransformTrait;
   use ElementTransformTrait;
   use LanguageTransformTrait;
+  use LiteralUnbPublisherTrait;
   use MimeTypeTrait;
   use SubjectTransformTrait;
   use ThesisAdvisorTransformTrait;

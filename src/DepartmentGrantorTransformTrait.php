@@ -11,10 +11,18 @@ trait DepartmentGrantorTransformTrait {
     foreach ($this->targetItemElements as $element) {
       if ($this->nameElementIsGrantor($element)) {
         $names = $this->getChildElementValuesByNameAttr($element, 'namePart');
+        $grantor_name_string = '';
+        $grantor_dept_string = '';
+
         foreach ($names as $name) {
           if (!empty($name) && $this->grantorIsInstitution($name)) {
-            $this->targetItemValues[] = rtrim($name, '.');
+            $grantor_name_string = rtrim($name, '.');
           }
+          if (!empty($name) && !$this->grantorIsInstitution($name)) {
+            $grantor_dept_string = rtrim($name, '.');
+          }
+          if (!empty($grantor_name_string) && !empty($grantor_dept_string))
+          $this->targetItemValues[] = "$grantor_name_string. $grantor_dept_string.";
         }
       }
     }
