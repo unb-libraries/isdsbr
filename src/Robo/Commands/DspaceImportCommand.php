@@ -122,7 +122,6 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
       $this->executeFilterMedia();
       $this->copyMapFile();
     }
-
   }
 
   /**
@@ -164,7 +163,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    * Archives the import folder's data into a single file.
    */
   private function archiveImportFolder() {
-    $this->io()->title('Archiving Files Prior to Transfer');
+    $this->addLogTitle('Archiving Files Prior to Transfer');
     $cmd = "cd {$this->importPath}; zip -r {$this->importZipFilePath} *";
     $this->say($cmd);
     passthru($cmd);
@@ -174,7 +173,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    * Copies the import's archive file to the k8s container.
    */
   private function copyArchiveToContainer() {
-    $this->io()->title('Copying Zip file to container');
+    $this->addLogTitle('Copying Zip file to container');
     $cmd = "kubectl --v=6 cp {$this->importZipFilePath} {$this->dspacePodId}:{$this->importZipFilePath} --namespace={$this->dspacePodNamespace}";
     $this->say($cmd);
     passthru($cmd);
@@ -184,7 +183,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    * Imports the import archive file into DSpace in the k8s pod.
    */
   private function importContainerArchive() {
-    $this->io()->title('Importing Archive Format');
+    $this->addLogTitle('Importing Archive Format');
     $dspace_bin = self::DSPACE_BIN_PATH;
     $mapfile = '/tmp/' . $this->importMapFileName;
     $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin import --add --collection={$this->dspaceTargetCollectionHandle} --eperson=" . self::DSPACE_ADMIN_USER . " --source=" . self::IMPORT_ZIP_PATH . " --zip={$this->importZipFileName} --mapfile=$mapfile";
@@ -196,7 +195,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    * Executes the filter-media command in the k8s pod on the target collection.
    */
   private function executeFilterMedia() {
-    $this->io()->title('Executing dspace filter-media on collection');
+    $this->addLogTitle('Executing dspace filter-media on collection');
     $dspace_bin = self::DSPACE_BIN_PATH;
     $cmd = "kubectl exec -t {$this->dspacePodId} --namespace={$this->dspacePodNamespace} -- $dspace_bin filter-media -i {$this->dspaceTargetCollectionHandle}";
     $this->say($cmd);
@@ -207,7 +206,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    * Copies a previously generated map file to the k8s pod.
    */
   private function copyMapFile() {
-    $this->io()->title('Copying Map File To Local');
+    $this->addLogTitle('Copying Map File To Local');
     $cmd = "kubectl cp {$this->dspacePodId}:/tmp/{$this->importMapFileName} {$this->importLocalMapPath}/{$this->importMapFileName} --namespace={$this->dspacePodNamespace}";
     $this->say($cmd);
     passthru($cmd);

@@ -3,6 +3,7 @@
 namespace UnbLibraries\IslandoraDspaceBridge\Robo\Commands;
 
 use Psr\Log\LogLevel;
+use Robo\Robo;
 use Robo\Tasks;
 use TrashPanda\ProgressBarLog\ProgressBarLog;
 
@@ -16,49 +17,13 @@ class IslandoraDspaceBridgeCommand extends Tasks {
   const ISDSBR_TARGET_COLLECTION_FILENAME = '.isdsbr_target_collection';
 
   /**
-   * The progress bar object for the current import.
-   *
-   * @var \TrashPanda\ProgressBarLog\ProgressBarLog
-   */
-  protected $progressBar;
-
-  /**
-   * Sets up the progress bar for use.
-   */
-  protected function setUpProgressBar() {
-    $this->progressBar = new ProgressBarLog(50, 1);
-    $this->progressBar->start();
-  }
-
-  /**
-   * Sets a maximum value for the progress bar.
-   *
-   * @param int $max_value
-   *   The maximum value to set.
-   */
-  protected function setProgressBarMaxValue($max_value) {
-    $bar = $this->progressBar->getProgressBar();
-    $bar->setMaxSteps($max_value);
-  }
-
-  /**
-   * Advances the progress bar.
-   *
-   * @param int $num
-   *   The amount of steps to advance the bar. Defaults to 1.
-   */
-  protected function progressBarAdvance($num = 1) {
-    $this->progressBar->advance($num);
-  }
-
-  /**
    * Adds a CRITICAL level message to the progress bar logger.
    *
    * @param $message
    *   The message to add.
    */
   protected function addLogCritical($message) {
-    $this->progressBar->addLog(LogLevel::CRITICAL, $message);
+    $this->io()->error($message);
   }
 
   /**
@@ -68,7 +33,36 @@ class IslandoraDspaceBridgeCommand extends Tasks {
    *   The message to add.
    */
   protected function addLogNotice($message) {
-    $this->progressBar->addLog(LogLevel::NOTICE, $message);
+    $this->io()->text($message);
+  }
+
+  /**
+   * Adds a strong message to the progress bar logger.
+   *
+   * @param $message
+   *   The message to add.
+   */
+  protected function addLogStrong($message) {
+    $this->io()->note($message);
+  }
+
+  /**
+   * Adds a title message to the progress bar logger.
+   *
+   * @param $message
+   *   The message to add.
+   */
+  protected function addLogTitle($message) {
+    $this->io()->title($message);
+  }
+
+  /**
+   * Gets the current logger.
+   *
+   * @return \Robo\Symfony\ConsoleIO|\Symfony\Component\Console\Style\SymfonyStyle
+   */
+  public function logger() {
+    return $this->io();
   }
 
 }

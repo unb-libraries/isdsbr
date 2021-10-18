@@ -160,9 +160,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
     $this->sourcePath = $source_path;
     $this->targetPath = $target_path;
     $this->initOperations();
-    $this->setupProgressBar();
     $this->setUpOperations();
-    $this->setupProgressBarMaxValue();
     $this->generateDspaceImports();
   }
 
@@ -186,28 +184,21 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * Sets up the list of operations (source items) to convert.
    */
   private function setUpOperations() {
+    $this->addLogTitle('Discovering Exported Objects');
     $dir_finder = new Finder();
-    $dir_finder->directories()->in($this->sourcePath)->depth(1);
+    $dir_finder->in($this->sourcePath)->depth('0')->directories();
     foreach ($dir_finder as $import_dir) {
-      $source_dir = $import_dir->getPath();
+      $source_dir = $import_dir->getRealPath();
+      $this->addLogStrong("Crawling $source_dir...");
       $this->operations[$source_dir] = [];
       $finder = new Finder();
       $finder->files()->in($source_dir)->name(self::ISDSBR_EXPORT_DIR_IDENTIFIER);
       foreach ($finder as $file) {
-        $this->operations[$source_dir][] = $file->getPath();
+        $full_object_path = $file->getPath();
+        $this->operations[$source_dir][] = $full_object_path;
+        $this->addLogNotice("[$source_dir] Adding $full_object_path...");
       }
     }
-  }
-
-  /**
-   * Sets the maximum value for the progress bar based on operation count.
-   */
-  protected function setupProgressBarMaxValue() {
-    $num_operations = 0;
-    foreach ($this->operations as $operation) {
-      $num_operations += count($operation);
-    }
-    $this->setProgressBarMaxValue($num_operations);
   }
 
   /**
@@ -216,8 +207,9 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    * @throws \Exception
    */
   private function generateDspaceImports() {
+    $this->addLogTitle('Converting Exported Objects');
     foreach ($this->operations as $this->curOperationSourcePath => $operation_paths) {
-      $this->addLogNotice("Object Crosswalk: $this->curOperationSourcePath");
+      $this->addLogStrong($this->curOperationSourcePath);
       $this->initCurImportOperation();
       foreach ($operation_paths as $this->curOperationItemSourcePath) {
         $this->addLogNotice('Converting ' . $this->curOperationItemSourcePath);
@@ -232,12 +224,9 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
         }
         $this->writeTargetItemMetadataFiles();
         $this->writeTargetItemBitstreamFiles();
-        $this->progressBarAdvance();
         $this->targetItemCounter++;
       }
-      $this->io()->newLine(2);
     }
-    $this->progressBar->finish();
   }
 
   /**
@@ -331,7 +320,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    */
   private function convertAppentModsMetadata() {
     $latest_file = $this->getLatestIslandoraFile($this->curOperationItemSourcePath, 'MODS.*.xml');
-    $this->addLogNotice("Using File: $latest_file");
+    $this->addLogNotice("Metadata Source: $latest_file");
     $this->sourceItemCrawler = new Crawler(file_get_contents($latest_file));
     foreach ($this->files as $metadata_id => $metadata_file) {
       $this->files[$metadata_id]['xml'] = new DomDocument($metadata_file['xml-version'], $metadata_file['xml-encoding']);

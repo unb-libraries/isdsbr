@@ -14,7 +14,7 @@ use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeComman
 class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
 
   // const SOLR_INT_MAX = 2147483647;
-  const SOLR_INT_MAX = 5;
+  const SOLR_INT_MAX = 10;
 
   /**
    * @var array
@@ -69,7 +69,6 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   private function initExport($path) {
     $this->setUpExportPath($path);
     $this->setUpConfigValues();
-    $this->setUpProgressBar();
   }
 
   private function setUpExportPath($path) {
@@ -105,11 +104,13 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   }
 
   private function doObjectDiscovery() {
+    $this->addLogTitle('Object Discovery');
     foreach ($this->exportCollections as $collection_id => $collection) {
+      $this->addLogStrong($collection['label']);
       $this->addLogNotice(
         sprintf(
           "[%s] Querying solr server for objects...",
-          $collection['label']
+          $this->exportSolrHostname
         )
       );
       $this->operations[$collection_id] = [
@@ -119,7 +120,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
       $this->addLogNotice(
         sprintf(
           "[%s] %s objects found and queued for export...",
-          $collection['label'],
+          $this->exportSolrHostname,
           count($this->operations[$collection_id]['pid_list'])
         )
       );
@@ -137,8 +138,9 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
     $query_command = "curl \"$query_uri\"";
     $this->addLogNotice(
       sprintf(
-        '[%s] Execute solr query...',
-        $this->exportSolrHostname
+        '[%s] %s',
+        $this->exportSolrHostname,
+        $query_command
       )
     );
     $query_result = $this->taskSshExec($this->exportSolrHostname)
@@ -157,17 +159,17 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
   }
 
   private function exportObjects() {
+    $this->addLogTitle('Object Export');
     foreach ($this->operations as $operation_idx => $operation) {
       $collection = $operation['collection'];
-      $this->addLogNotice('Object Export: ' . $collection['label']);
+      $this->addLogStrong( $collection['label']);
       $operation_export_path = $this->exportPath . "/$operation_idx";
       if (!file_exists($operation_export_path)) {
         mkdir($operation_export_path, 0777, TRUE);
       }
 
-      $this->setProgressBarMaxValue(count($operation['pid_list']));
       foreach ($operation['pid_list'] as $pid) {
-        $this->addLogNotice("Exporting PID $pid from $this->exportIslandoraHostname...");
+        $this->addLogNotice("[{$this->exportIslandoraHostname}] Exporting PID $pid...");
         $export_file = $this->exportIslandoraItem($pid, $operation);
         $file_info = pathinfo($export_file);
         $temp_dir = $this->tempdir();
@@ -186,8 +188,6 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
         } else {
           $this->needManualCopy[] = $pid;
         }
-
-        $this->progressBarAdvance();
       }
 
       // Write mapping format.
@@ -196,18 +196,12 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
       // Write target collection filename.
       file_put_contents($operation_export_path . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME, $operation['collection']['target_collection']);
 
-      // Finish up.
-      $this->progressBar->finish();
-      $this->io()->newLine(2);
-
       // Report any issues.
       if (!empty($this->needManualCopy)) {
-        $this->io()->newLine();
-        $this->io()->title('Issues Detected!');
-        $this->say("Some items failed to export correctly. PDF.0.pdf and MODS.0.xml for each item will need to be created in {$this->exportPath} manually.");
+        $this->addLogTitle('Issues Detected!');
+        $this->addLogNotice("Some items failed to export correctly. PDF.0.pdf and MODS.0.xml for each item will need to be created in {$this->exportPath} manually.");
         foreach ($this->needManualCopy as $pid) {
-          $this->io()->text("https://unbscholar.lib.unb.ca/islandora/object/$pid/manage/datastreams");
-          $this->io()->newLine();
+          $this->say("https://unbscholar.lib.unb.ca/islandora/object/$pid/manage/datastreams");
         }
       }
     }
