@@ -11,8 +11,7 @@ use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeComman
  */
 class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
 
-  // const SOLR_INT_MAX = 2147483647;
-  const SOLR_INT_MAX = 10;
+  const SOLR_INT_MAX = 2147483647;
 
   /**
    * The collections to export.
@@ -110,12 +109,18 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
    *
    * @param string $path
    *   The path to export the objects to.
+   * @param array $options
+   *   An array of CLI options to pass to the command.
+   *
+   * @option int max-items-per-collection
+   *   The maximum items to export from each collection/query. Defaults to all.
    *
    * @throws \Exception
    *
    * @command isdsbr:export
    */
-  public function islandoraExportToLocal($path) {
+  public function islandoraExportToLocal($path, array $options = ['max-items-per-collection' => self::SOLR_INT_MAX]) {
+    $this->options = $options;
     $this->initExport($path);
     $this->setUpOperations();
     $this->exportObjects();
@@ -218,7 +223,7 @@ class IslandoraRepositoryExportCommand extends IslandoraDspaceBridgeCommand {
       $this->exportSolrUri,
       $this->exportSolrCoreName,
       $query,
-      self::SOLR_INT_MAX
+      $this->options['max-items-per-collection']
     );
     $query_command = "curl \"$query_uri\"";
     $this->addLogNotice(

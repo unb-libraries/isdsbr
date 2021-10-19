@@ -14,6 +14,13 @@ class IslandoraDspaceBridgeCommand extends Tasks {
   const ISDSBR_TARGET_COLLECTION_FILENAME = '.isdsbr_target_collection';
 
   /**
+   * The options passed to the CLI command.
+   *
+   * @var string[]
+   */
+  protected $options = [];
+
+  /**
    * Adds a CRITICAL level message to the progress bar logger.
    *
    * @param $message
