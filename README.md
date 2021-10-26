@@ -2,8 +2,8 @@
 ## Automated Islandora-Dspace Migrations
 __isdsbr__ is a PHP application that automates and standardizes a migration from Islandora (MODS metadata) to DSpace (Dublin Core metadata). __isdsbr__ is based on the Robo framework.
 
-## Getting Started
-#### General requirements
+## Prerequisites
+#### General Requirements
 Although __isdsbr__ can be deployed on OSX, the only officially supported operating system is Linux.
 
 #### Software Prerequisites
@@ -16,7 +16,7 @@ You must have the following tools available for use from the command line:
 #### Networking
 __isdsbr__ requires your local workstation to make HTTP, HTTPS and SSH requests. These requests must not be blocked. If you use a proxy server to connect to the web or SSH, you must also configure your OS to use that proxy by default.
 
-### Initial Setup
+## Initial Setup
 ```
 composer install
 ```
