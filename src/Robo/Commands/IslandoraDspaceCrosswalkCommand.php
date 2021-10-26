@@ -336,7 +336,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    */
   protected function getLatestIslandoraFile($file_mask) {
     $numeric_files = glob($this->curOperationItemSourcePath . "/$file_mask");
-    sort($numeric_files);
+    natsort($numeric_files);
     return end($numeric_files);
   }
 
