@@ -3,17 +3,17 @@
 __isdsbr__ is a PHP application that automates and standardizes a migration from Islandora (MODS metadata) to DSpace (Dublin Core metadata). __isdsbr__ is based on the Robo framework.
 
 ## Getting Started
-### General requirements
+#### General requirements
 Although __isdsbr__ can be deployed on OSX, the only officially supported operating system is Linux.
 
-### Software Prerequisites
+#### Software Prerequisites
 You must have the following tools available for use from the command line:
 
 * [PHP7.3+](https://php.org/): Install via ```apt-get install php-cli```
 * Various PHP Extensions: Install via ```apt-get install php-curl php-ctype php-dom php-gd php-mbstring php-posix php-yaml php-zip```
 * [composer](https://getcomposer.org/): Installation steps [are located here](https://getcomposer.org/download/).
 
-## Networking
+#### Networking
 __isdsbr__ requires your local workstation to make HTTP, HTTPS and SSH requests. These requests must not be blocked. If you use a proxy server to connect to the web or SSH, you must also configure your OS to use that proxy by default.
 
 ### Initial Setup
@@ -21,37 +21,37 @@ __isdsbr__ requires your local workstation to make HTTP, HTTPS and SSH requests.
 composer install
 ```
 
-## Usage
-### 1. isdsbr:export
+## Commands / Usage
+### isdsbr:export
 #### Remote -> Local
-Discover objects from Islandora/Fedora based on a solr query, and then export them to a local path via __fedora-export.sh__ in the ATOMZip format:
+Discovers objects from Islandora/Fedora based on a solr query, and then exports them to a local path via __fedora-export.sh__ in the ATOMZip format:
 
 ```
 ./isdsbr isdsbr:export /tmp/exportFedora
 ```
 
-The solr query and all necessary configuration is read from isdsbr.yml.
+All necessary configuration is read from _isdsbr.yml_.
 
-### 2. isdsbr:crosswalk
+### isdsbr:crosswalk
 #### Local -> Local
-Migrate the Islandora MODS-based content into Dublin Core based Simple Archive Format metadata:
+Migrates the Islandora MODS-based content into Dublin Core based Simple Archive Format metadata:
 
 ```
 ./isdsbr isdsbr:crosswalk /tmp/exportFedora /tmp/exportDspace
 ```
 
-### 3. isdsbr:import
+### isdsbr:import
 #### Local -> Remote
-Import the local migrated DSpace metadata into a remote DSpace instance running in a k8s pod:
+Imports the local migrated DSpace metadata into a remote DSpace instance running in a k8s pod:
 
 ```
 ./isdsbr isdsbr:import /tmp/exportDspace unbscholar-lib-unb-ca-cd47bfccc-74p7g prod 1234567/21
 ```
 
-(Optionally) Revert an import by leveraging the timestamped export map file:
+(Optionally) Revert an import via the (local) export map file:
 
 ```
-./isdsbr isdsbr:import:revert 1600784182 unbscholar-lib-unb-ca-cd47bfccc-74p7g prod
+./isdsbr isdsbr:import:revert /tmp/import_maps/dspace_import_map-1634640294-biology_theses_dissertations.txt unbscholar-lib-unb-ca-cd47bfccc-74p7g prod
 ```
 
 ## Releases
