@@ -65,7 +65,7 @@ class DspaceImportRevertCommand extends IslandoraDspaceBridgeCommand {
   protected function copyMapFileToContainer() {
     $this->addLogTitle('Copying Map File To k8s pod...');
     $cmd = sprintf(
-      'kubectl cp %s %s:%s --namespace=%s',
+      'kubectl cp %s %s:/tmp/%s --namespace=%s',
       $this->importLocalMapPath,
       $this->dspacePodId,
       $this->importMapFileName,
