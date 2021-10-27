@@ -39,7 +39,7 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: title
-                    qualifier: alternate
+                    qualifier: alternative
             -
               source_paths:
                 - //mods:mods/mods:genre
