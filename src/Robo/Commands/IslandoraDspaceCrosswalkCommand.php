@@ -336,8 +336,11 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    */
   protected function getLatestIslandoraFile($file_mask) {
     $numeric_files = glob($this->curOperationItemSourcePath . "/$file_mask");
-    natsort($numeric_files);
-    return end($numeric_files);
+    if (!empty($numeric_files)) {
+      natsort($numeric_files);
+      return end($numeric_files);
+    }
+    return '';
   }
 
   /**
@@ -460,8 +463,10 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    */
   protected function writePDFFile() {
     $latest_pdf = $this->getLatestIslandoraFile('PDF.*.pdf');
-    $latest_pdf_name = basename($latest_pdf);
-    $this->copyItemFile($latest_pdf_name, 'item.pdf', "\tprimary:true");
+    if (!empty($latest_pdf)) {
+      $latest_pdf_name = basename($latest_pdf);
+      $this->copyItemFile($latest_pdf_name, 'item.pdf', "\tprimary:true");
+    }
   }
 
   /**
