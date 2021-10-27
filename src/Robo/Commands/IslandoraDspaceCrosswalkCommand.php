@@ -79,6 +79,13 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   protected $operations = [];
 
   /**
+   * Previously imported items.
+   *
+   * @var array
+   */
+  protected $previouslyImportedItems = [];
+
+  /**
    * The crawler of the current MODS XML item being converted.
    *
    * @var \Symfony\Component\DomCrawler\Crawler
@@ -203,6 +210,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
       $this->addLogTitle("Converting Exported Objects : $this->curOperationSourcePath");
       $this->initCurImportOperation();
       foreach ($operation_paths as $this->curOperationItemSourcePath) {
+        $this->previouslyImportedItems = [];
         $this->addLogStrong('Converting ' . $this->curOperationItemSourcePath);
         $this->setTargetItemTargetPath();
         $this->convertAppentModsMetadata();
@@ -381,12 +389,14 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
       if ($path_key == $last_path_key) {
         // This is where the value lives - add new elements each time.
         foreach ($this->targetItemValues as $value) {
-          $new_node = $this->files[$map_item['target_file']]['xml']->createElement($path['name']);
-          foreach ($path['attributes'] as $attribute_name => $attribute_value) {
-            $new_node->setAttribute($attribute_name, $attribute_value);
+          if ($this->isUniqueNewItem($map_item['target_file'], $path, $value)) {
+            $new_node = $this->files[$map_item['target_file']]['xml']->createElement($path['name']);
+            foreach ($path['attributes'] as $attribute_name => $attribute_value) {
+              $new_node->setAttribute($attribute_name, $attribute_value);
+            }
+            $new_node->nodeValue = htmlspecialchars($value);
+            $prev_node->appendChild($new_node);
           }
-          $new_node->nodeValue = htmlspecialchars($value);
-          $prev_node->appendChild($new_node);
         }
       }
       else {
@@ -395,6 +405,18 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
       }
     }
     $this->files[$map_item['target_file']]['xml']->appendChild($this->files[$map_item['target_file']]['dcelement']);
+  }
+
+  protected function isUniqueNewItem($file_id, array $path, $value): bool {
+    if (!array_key_exists($file_id, $this->previouslyImportedItems)) {
+      $this->previouslyImportedItems[$file_id] = [];
+    }
+    $path['value'] = $value;
+    if (in_array($path, $this->previouslyImportedItems[$file_id])) {
+      return FALSE;
+    }
+    $this->previouslyImportedItems[$file_id][] = $path;
+    return TRUE;
   }
 
   /**
