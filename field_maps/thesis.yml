@@ -42,7 +42,7 @@ isdsbr:
                     qualifier: alternative
             -
               source_paths:
-                - //mods:mods/mods:genre
+                - //mods:mods/mods:extension/mods:degree/etd:level
               transform_callback: "thesisTypeTransform"
               target_file: dublin_core
               target_path:
@@ -212,6 +212,16 @@ isdsbr:
                     qualifier: cash
             -
               source_paths:
+                - //mods:mods/mods:subject[@authority='local']/mods:topic
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: classification
+            -
+              source_paths:
                 - //mods:mods/mods:accessCondition[@type='useAndReproduction']
               transform_callback: "transformLiteral"
               target_file: dublin_core
@@ -282,7 +292,7 @@ isdsbr:
                     qualifier: accessioned
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDisciplineName
+                - //mods:mods/mods:extension/mods:degree/etd:discipline
               transform_callback: "transformLiteral"
               target_file: dc_thesis
               target_path:
@@ -292,14 +302,33 @@ isdsbr:
                     qualifier: 'discipline'
             -
               source_paths:
+                - //mods:mods/mods:extension/mods:degree/etd:nameAbbreviated
+              transform_callback: "degreeNameTransform"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'name'
+            -
+              source_paths:
                 - //mods:mods/mods:name[@type='corporate']
-              transform_callback: "transformGrantor"
+              transform_callback: "getLiteralDegreeGrantor"
               target_file: dc_thesis
               target_path:
                 - name: dcvalue
                   attributes:
                     element: degree
                     qualifier: 'grantor'
+            -
+              source_paths:
+                - //mods:mods/mods:name[@type='corporate']
+              transform_callback: "getLiteralDegreeGrantor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: publisher
             -
               source_paths:
                 - //mods:mods/mods:name[@type='corporate']
@@ -368,13 +397,14 @@ isdsbr:
                     element: department
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDisciplineName
+                - //mods:mods/mods:extension/mods:degree/etd:discipline
               transform_callback: "transformLiteral"
               target_file: dublin_core
               target_path:
                 - name: dcvalue
                   attributes:
                     element: subject
+                    qualifier: 'discipline'
 
             -
               source_paths:

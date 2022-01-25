@@ -8,6 +8,8 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Finder\Finder;
 use UnbLibraries\IslandoraDspaceBridge\AuthorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DateTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\DegreeGrantorTrait;
+use UnbLibraries\IslandoraDspaceBridge\DegreeNameTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DepartmentGrantorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
@@ -26,6 +28,8 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
 
   use AuthorTransformTrait;
   use DateTransformTrait;
+  use DegreeGrantorTrait;
+  use DegreeNameTransformTrait;
   use DepartmentGrantorTransformTrait;
   use ElementTransformTrait;
   use LanguageTransformTrait;
@@ -35,6 +39,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   use ThesisAdvisorTransformTrait;
   use ThesisTypeTransformTrait;
   use TitleTransformTrait;
+
 
   /**
    * The current operation's item source path.
@@ -466,6 +471,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
     foreach ($this->files as $metadata_id => $metadata_file) {
       $this->files[$metadata_id]['xml']->formatOutput = TRUE;
       $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
+      $this->addLogNotice("Writing Metadata: $output_file");
       file_put_contents($output_file, $this->files[$metadata_id]['xml']->saveXML());
     }
   }
