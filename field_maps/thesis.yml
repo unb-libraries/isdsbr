@@ -267,16 +267,6 @@ isdsbr:
                     qualifier: updated
             -
               source_paths:
-                - //mods:mods/mods:recordInfo/mods:recordCreationDate
-              transform_callback: "transform8601DateDefaultNow"
-              target_file: dublin_core
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: date
-                    qualifier: accessioned
-            -
-              source_paths:
                 - //mods:mods/mods:extension/etd:degree/etd:discipline
               transform_callback: "transformLiteral"
               target_file: dc_thesis
