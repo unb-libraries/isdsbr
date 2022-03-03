@@ -11,11 +11,6 @@ isdsbr:
           xml-version: '1.0'
           xml-encoding: 'UTF-8'
           schema: thesis
-        dc_unb:
-          filename: metadata_unb.xml
-          xml-version: '1.0'
-          xml-encoding: 'UTF-8'
-          schema: unb
       mappings:
         thesis:
           name: thesis
@@ -340,33 +335,6 @@ isdsbr:
                     qualifier: 'level'
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbInstitutionName
-              transform_callback: "transformLiteral"
-              target_file: dc_unb
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: campus
-            -
-              source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbCollectionName
-              transform_callback: "transformLiteral"
-              target_file: dc_unb
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: collection
-            -
-              source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDepartmentName
-              transform_callback: "transformLiteral"
-              target_file: dc_unb
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: department
-            -
-              source_paths:
                 - //mods:mods/mods:extension/etd:degree/etd:discipline
               transform_callback: "transformLiteral"
               target_file: dublin_core
@@ -375,43 +343,6 @@ isdsbr:
                   attributes:
                     element: subject
                     qualifier: 'discipline'
-
-            -
-              source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbFacultyName
-              transform_callback: "transformLiteral"
-              target_file: dc_unb
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: faculty
-            -
-              source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbGroupName
-              transform_callback: "transformLiteral"
-              target_file: dc_unb
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: groupName
-            -
-              source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbObjectType
-              transform_callback: "transformLiteral"
-              target_file: dc_unb
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: objectType
-            -
-              source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbScholarshipLevel
-              transform_callback: "transformLiteral"
-              target_file: dc_unb
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: scholarLevel
             -
               source_paths:
                 - //mods:mods
