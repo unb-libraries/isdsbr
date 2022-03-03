@@ -226,6 +226,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
             $this->createDCItems($map_element);
           }
         }
+        $this->moveDublinCoreContributorAuthorElementToFirst();
         $this->writeTargetItemMetadataFiles();
         $this->writeTargetItemBitstreamFiles();
         $this->targetItemCounter++;
@@ -473,6 +474,26 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
       $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
       $this->addLogNotice("Writing Metadata: $output_file");
       file_put_contents($output_file, $this->files[$metadata_id]['xml']->saveXML());
+    }
+  }
+
+  /**
+   * Moves the dc.contributor/author element to the first item in the file.
+   *
+   * This output format is required by LAC for harvesting.
+   */
+  protected function moveDublinCoreContributorAuthorElementToFirst() {
+    $dc_element = $this->files['dublin_core']['xml']->getElementsByTagName('dublin_core')->item(0);
+    $first_dc_item_element = $dc_element->childNodes->item(0);
+    foreach ( $dc_element->childNodes as $dc_value_element ) {
+      if (
+        $dc_value_element->nodeName == 'dcvalue' &&
+        $dc_value_element->getAttribute('element') == 'contributor' &&
+        $dc_value_element->getAttribute('qualifier') == 'author'
+      ) {
+        $dc_element->insertBefore($dc_value_element, $first_dc_item_element);
+        break;
+      }
     }
   }
 
