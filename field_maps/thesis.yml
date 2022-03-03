@@ -232,16 +232,6 @@ isdsbr:
                     qualifier: 'none'
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbObjectType
-              transform_callback: "transformLiteral"
-              target_file: dublin_core
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: type
-                    qualifier: 'none'
-            -
-              source_paths:
                 - //mods:mods/mods:name
               transform_callback: "transformAdvisor"
               target_file: dublin_core
