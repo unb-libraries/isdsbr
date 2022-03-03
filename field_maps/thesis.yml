@@ -42,7 +42,7 @@ isdsbr:
                     qualifier: alternative
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:degree/etd:level
+                - //mods:mods/mods:extension/etd:degree/etd:level
               transform_callback: "thesisTypeTransform"
               target_file: dublin_core
               target_path:
@@ -282,7 +282,7 @@ isdsbr:
                     qualifier: accessioned
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:degree/etd:discipline
+                - //mods:mods/mods:extension/etd:degree/etd:discipline
               transform_callback: "transformLiteral"
               target_file: dc_thesis
               target_path:
@@ -292,7 +292,7 @@ isdsbr:
                     qualifier: 'discipline'
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:degree/etd:nameAbbreviated
+                - //mods:mods/mods:extension/etd:degree/etd:nameAbbreviated
               transform_callback: "degreeNameTransform"
               target_file: dc_thesis
               target_path:
@@ -340,7 +340,7 @@ isdsbr:
                     qualifier: 'department'
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:degree/etd:level
+                - //mods:mods/mods:extension/etd:degree/etd:level
               transform_callback: "transformLiteral"
               target_file: dc_thesis
               target_path:
@@ -377,7 +377,7 @@ isdsbr:
                     element: department
             -
               source_paths:
-                - //mods:mods/mods:extension/mods:degree/etd:discipline
+                - //mods:mods/mods:extension/etd:degree/etd:discipline
               transform_callback: "transformLiteral"
               target_file: dublin_core
               target_path:
