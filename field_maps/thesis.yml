@@ -330,16 +330,6 @@ isdsbr:
                     element: publisher
             -
               source_paths:
-                - //mods:mods/mods:name[@type='corporate']
-              transform_callback: "transformGrantorDepartment"
-              target_file: dc_thesis
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: degree
-                    qualifier: 'department'
-            -
-              source_paths:
                 - //mods:mods/mods:extension/etd:degree/etd:level
               transform_callback: "transformLiteral"
               target_file: dc_thesis
