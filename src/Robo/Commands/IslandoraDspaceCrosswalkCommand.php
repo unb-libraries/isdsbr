@@ -6,11 +6,13 @@ use DOMDocument;
 use Exception;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Finder\Finder;
+use UnbLibraries\IslandoraDspaceBridge\ArticleTypeTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\AuthorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DateTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DegreeGrantorTrait;
 use UnbLibraries\IslandoraDspaceBridge\DegreeNameTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DepartmentGrantorTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\EditorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LiteralUnbPublisherTrait;
@@ -26,11 +28,13 @@ use UnbLibraries\IslandoraDspaceBridge\TitleTransformTrait;
  */
 class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
 
+  use ArticleTypeTransformTrait;
   use AuthorTransformTrait;
   use DateTransformTrait;
   use DegreeGrantorTrait;
   use DegreeNameTransformTrait;
   use DepartmentGrantorTransformTrait;
+  use EditorTransformTrait;
   use ElementTransformTrait;
   use LanguageTransformTrait;
   use LiteralUnbPublisherTrait;
@@ -39,7 +43,6 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   use ThesisAdvisorTransformTrait;
   use ThesisTypeTransformTrait;
   use TitleTransformTrait;
-
 
   /**
    * The current operation's item source path.
