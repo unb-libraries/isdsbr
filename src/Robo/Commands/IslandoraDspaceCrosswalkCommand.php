@@ -137,7 +137,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    *
    * @var string[]
    */
-  protected $targetItemValues = [];
+  protected array $targetItemValues = [];
 
   /**
    * The path to the current Simple Archive Format being written.
