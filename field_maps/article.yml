@@ -177,7 +177,7 @@ isdsbr:
                     qualifier: 'none'
             -
               source_paths:
-                - //mods:mods/mods:relatedItem[@type='host']/mods:titleInfo/mods:title
+                - //mods:mods/mods:relatedItem[@type='host']/mods:titleInfo[not(@type)]/mods:title
               transform_callback: "transformLiteral"
               target_file: dc_oaire
               target_path:
