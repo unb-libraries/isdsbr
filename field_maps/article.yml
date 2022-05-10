@@ -247,7 +247,7 @@ isdsbr:
                     qualifier: 'none'
             -
               source_paths:
-                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:date
+                - //mods:mods/mods:originInfo/mods:dateIssued
               transform_callback: "transformLiteral"
               target_file: dublin_core
               target_path:
@@ -257,8 +257,8 @@ isdsbr:
                     qualifier: issued
             -
               source_paths:
-                - //mods:mods/mods:originInfo/mods:dateIssued
-              transform_callback: "transformLiteral"
+                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:date
+              transform_callback: "transformHostDateIfNoModsDate"
               target_file: dublin_core
               target_path:
                 - name: dcvalue

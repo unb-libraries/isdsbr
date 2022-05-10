@@ -8,6 +8,7 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Finder\Finder;
 use UnbLibraries\IslandoraDspaceBridge\ArticleTypeTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\AuthorTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\ConditionalArticleDateTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DateTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DegreeGrantorTrait;
 use UnbLibraries\IslandoraDspaceBridge\DegreeNameTransformTrait;
@@ -30,6 +31,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
 
   use ArticleTypeTransformTrait;
   use AuthorTransformTrait;
+  use ConditionalArticleDateTransformTrait;
   use DateTransformTrait;
   use DegreeGrantorTrait;
   use DegreeNameTransformTrait;

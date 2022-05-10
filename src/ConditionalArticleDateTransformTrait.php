@@ -2,24 +2,20 @@
 
 namespace UnbLibraries\IslandoraDspaceBridge;
 
-/**
- * Provides methods to transform MODS subject elements into DC values.
- */
-trait DateTransformTrait {
+use DOMXPath;
 
-  private function transform8601DateDefaultNow() {
-    $date_format = 'Y-m-d\TH:i:s\Z';
-    foreach ($this->targetItemElements as $element) {
-      $mods_value = trim($element->textContent);
-      $tz = date_default_timezone_get();
-      date_default_timezone_set('UTC');
-      if (!empty($mods_value)) {
-        $timestamp = strtotime($mods_value);
-        $this->targetItemValues[] = date($date_format, $timestamp);
-      } else {
-        $this->targetItemValues[] = date($date_format, strtotime("now"));
+/**
+ * Provides methods to conditionally provide a date if one isn't set.
+ */
+trait ConditionalArticleDateTransformTrait {
+
+  private function transformHostDateIfNoModsDate() {
+    if (!empty($this->files['dublin_core']['xml'])) {
+      $xpath = new DomXpath($this->files['dublin_core']['xml']);
+      foreach ($xpath->query('//dcvalue[@element="date" and @qualifier="issued"]') as $rowNode) {
+        return;
       }
-      date_default_timezone_set($tz);
+      $this->transformLiteral();
     }
   }
 
