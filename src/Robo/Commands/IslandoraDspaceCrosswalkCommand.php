@@ -477,10 +477,13 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
    */
   protected function writeTargetItemMetadataFiles() {
     foreach ($this->files as $metadata_id => $metadata_file) {
-      $this->files[$metadata_id]['xml']->formatOutput = TRUE;
-      $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
-      $this->addLogNotice("Writing Metadata: $output_file");
-      file_put_contents($output_file, $this->files[$metadata_id]['xml']->saveXML());
+      $allElements = $metadata_file['xml']->getElementsByTagName('*');
+      if ($allElements->length > 0) {
+        $this->files[$metadata_id]['xml']->formatOutput = TRUE;
+        $output_file = $this->targetItemTargetPath . '/' . $metadata_file['filename'];
+        $this->addLogNotice("Writing Metadata: $output_file");
+        file_put_contents($output_file, $this->files[$metadata_id]['xml']->saveXML());
+      }
     }
   }
 
