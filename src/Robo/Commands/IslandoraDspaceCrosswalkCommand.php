@@ -13,6 +13,7 @@ use UnbLibraries\IslandoraDspaceBridge\DateTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DegreeGrantorTrait;
 use UnbLibraries\IslandoraDspaceBridge\DegreeNameTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\DepartmentGrantorTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\DoiNormalizationTrait;
 use UnbLibraries\IslandoraDspaceBridge\EditorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
@@ -36,6 +37,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   use DegreeGrantorTrait;
   use DegreeNameTransformTrait;
   use DepartmentGrantorTransformTrait;
+  use DoiNormalizationTrait;
   use EditorTransformTrait;
   use ElementTransformTrait;
   use LanguageTransformTrait;

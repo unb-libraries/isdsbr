@@ -108,7 +108,7 @@ isdsbr:
             -
               source_paths:
                 - //mods:mods/mods:identifier[@type='doi']
-              transform_callback: "transformLiteral"
+              transform_callback: "getStandardizedDoiValue"
               target_file: dublin_core
               target_path:
                 - name: dcvalue
