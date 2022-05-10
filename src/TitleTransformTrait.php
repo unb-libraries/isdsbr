@@ -13,10 +13,10 @@ trait TitleTransformTrait {
       $subtitle_values = [];
 
       foreach ($element->childNodes as $spec_element) {
-        if ($spec_element->nodeName == 'mods:title') {
+        if ($spec_element->nodeName == 'mods:title' || $spec_element->nodeName == 'title') {
           $title_values[] = $spec_element->textContent;
         }
-        if ($spec_element->nodeName == 'mods:subTitle') {
+        if ($spec_element->nodeName == 'mods:subTitle' || $spec_element->nodeName == 'subTitle') {
           $subtitle_values[] = $spec_element->textContent;
         }
       }
@@ -28,7 +28,9 @@ trait TitleTransformTrait {
           $final_string .= ": $subtitle_string";
         }
       }
-      $this->targetItemValues[] = $final_string;
+      if (!empty($final_string)) {
+        $this->targetItemValues[] = $final_string;
+      }
     }
   }
 
