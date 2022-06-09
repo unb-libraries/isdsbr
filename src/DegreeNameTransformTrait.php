@@ -45,4 +45,22 @@ trait DegreeNameTransformTrait {
     }
   }
 
+  private function literalNursingNameTransform() {
+    foreach ($this->targetItemElements as $element) {
+      $this->targetItemValues[] = 'Bachelor of Nursing';
+    }
+  }
+
+  private function literalEngineeringNameTransform() {
+    foreach ($this->targetItemElements as $element) {
+      $this->targetItemValues[] = 'Bachelor of Engineering';
+    }
+  }
+
+  private function literalUndergraduateLevelTransform() {
+    foreach ($this->targetItemElements as $element) {
+      $this->targetItemValues[] = 'undergraduate';
+    }
+  }
+
 }

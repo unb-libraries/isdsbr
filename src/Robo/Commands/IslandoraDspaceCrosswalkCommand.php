@@ -333,7 +333,13 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   protected function convertAppentModsMetadata() {
     $latest_file = $this->getLatestIslandoraFile('MODS.*.xml');
     $this->addLogNotice("Metadata Source: $latest_file");
-    $this->sourceItemCrawler = new Crawler(file_get_contents($latest_file));
+    $xml_contents = file_get_contents($latest_file);
+
+    if (!str_contains($xml_contents, '<?xml')) {
+      $xml_contents = "<?xml version=\"1.0\"?>\n" . $xml_contents;
+    }
+
+    $this->sourceItemCrawler = new Crawler($xml_contents);
     foreach ($this->files as $metadata_id => $metadata_file) {
       $this->files[$metadata_id]['xml'] = new DomDocument($metadata_file['xml-version'], $metadata_file['xml-encoding']);
       $dc_element = $this->files[$metadata_id]['xml']->createElement('dublin_core');

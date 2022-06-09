@@ -26,4 +26,21 @@ trait ThesisTypeTransformTrait {
     }
   }
 
+  private function literalNursingTypeTransform() {
+    foreach ($this->targetItemElements as $element) {
+      $this->targetItemValues[] = 'nursing synthesis paper';
+    }
+  }
+
+  private function literalHonoursTypeTransform() {
+    foreach ($this->targetItemElements as $element) {
+      $this->targetItemValues[] = 'bachelor thesis';
+    }
+  }
+
+  private function literalSeniorTypeTransform() {
+    foreach ($this->targetItemElements as $element) {
+      $this->targetItemValues[] = 'senior report';
+    }
+  }
 }

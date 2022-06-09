@@ -1,0 +1,373 @@
+isdsbr:
+  field_maps:
+    honours:
+      files:
+        dublin_core:
+          filename: dublin_core.xml
+          xml-version: '1.0'
+          xml-encoding: 'UTF-8'
+        dc_thesis:
+          filename: metadata_thesis.xml
+          xml-version: '1.0'
+          xml-encoding: 'UTF-8'
+          schema: thesis
+      mappings:
+        honours:
+          name: honours
+          elements:
+            -
+              source_paths:
+                - //mods:mods/mods:titleInfo[not(@type='alternative')]
+              transform_callback: "transformTitle"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: title
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:titleInfo[@type='alternative']/mods:title
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: title
+                    qualifier: alternative
+            -
+              source_paths:
+                - //mods:mods/mods:name
+              transform_callback: "transformAuthor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: contributor
+                    qualifier: author
+            -
+              source_paths:
+                - //mods:mods/mods:abstract
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: description
+                    qualifier: abstract
+            -
+              source_paths:
+                - //mods:mods/mods:physicalDescription/mods:extent
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: format
+                    qualifier: extent
+            -
+              source_paths:
+                - //mods:mods/mods:recordInfo/mods:recordIdentifier
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: other
+            -
+              source_paths:
+                - //mods:mods/mods:recordInfo/mods:recordOrigin
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: description
+                    qualifier: provenance
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='doi']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: doi
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='uri']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: uri
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='oclc']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: oclc
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='issn']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: issn
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='isbn']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: isbn
+            -
+              source_paths:
+                - //mods:mods/mods:note[not(@type='statement of responsibility')]
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: description
+                    qualifier: note
+            -
+              source_paths:
+                - //mods:mods/mods:physicalDescription/mods:form
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: format
+                    qualifier: medium
+            -
+              source_paths:
+                - //mods:mods/mods:language/mods:languageTerm
+              transform_callback: "transformLanguage"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: language
+                    qualifier: iso
+            -
+              source_paths:
+                - //mods:mods/mods:accessCondition[@type='use and reproduction']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: rights
+                    qualifier: holder
+            -
+              source_paths:
+                - //mods:mods/mods:subject[@authority='lcsh']/mods:topic
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: lcsh
+            -
+              source_paths:
+                - //mods:mods/mods:subject[@authority='cash']/mods:topic
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: cash
+            -
+              source_paths:
+                - //mods:mods/mods:subject[@authority='local']/mods:topic
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: classification
+            -
+              source_paths:
+                - //mods:mods/mods:accessCondition[@type='useAndReproduction']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: rights
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:name
+              transform_callback: "transformAdvisor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: contributor
+                    qualifier: advisor
+            -
+              source_paths:
+                - //mods:mods/mods:originInfo/mods:dateIssued
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: date
+                    qualifier: issued
+            -
+              source_paths:
+                - //mods:mods/mods:location/mods:url
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: url
+            -
+              source_paths:
+                - //mods:mods/mods:recordInfo/mods:recordChangeDate
+              transform_callback: "transform8601DateDefaultNow"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: date
+                    qualifier: updated
+            -
+              source_paths:
+                - //mods:mods/mods:extension/etd:degree/etd:discipline
+              transform_callback: "transformLiteral"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'discipline'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/etd:degree/etd:nameAbbreviated
+              transform_callback: "degreeNameTransform"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'name'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:degree/etd:discipline
+              transform_callback: "transformLiteral"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'discipline'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:degree/etd:nameAbbreviated
+              transform_callback: "degreeNameTransform"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'name'
+            -
+              source_paths:
+                - //mods:mods/mods:name[@type='corporate']
+              transform_callback: "getLiteralDegreeGrantor"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'grantor'
+            -
+              source_paths:
+                - //mods:mods/mods:name[@type='corporate']
+              transform_callback: "getLiteralDegreeGrantor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: publisher
+            -
+              source_paths:
+                - //mods:mods/mods:name[@type='corporate']
+              transform_callback: "transformGrantorInstitutionOnly"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: publisher
+            -
+              source_paths:
+                - //mods:mods
+              transform_callback: "literalUndergraduateLevelTransform"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'level'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/etd:degree/etd:discipline
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: 'discipline'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:degree/etd:discipline
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: 'discipline'
+            -
+              source_paths:
+                - //mods:mods
+              transform_callback: "getLiteralMimeType"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: format
+            -
+              source_paths:
+                - //mods:mods
+              transform_callback: "literalHonoursTypeTransform"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: type

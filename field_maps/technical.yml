@@ -1,0 +1,277 @@
+isdsbr:
+  field_maps:
+    technical:
+      files:
+        dublin_core:
+          filename: dublin_core.xml
+          xml-version: '1.0'
+          xml-encoding: 'UTF-8'
+        dc_oaire:
+          filename: metadata_oaire.xml
+          xml-version: '1.0'
+          xml-encoding: 'UTF-8'
+          schema: oaire
+      mappings:
+        technical:
+          name: technical
+          elements:
+            -
+              source_paths:
+                - //mods:mods/mods:genre
+              transform_callback: "articleTypeTransform"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: type
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:titleInfo[not(@type='alternative')]
+              transform_callback: "transformTitle"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: title
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:titleInfo[@type='alternative']/mods:title
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: title
+                    qualifier: alternative
+            -
+              source_paths:
+                - //mods:mods/mods:abstract
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: description
+                    qualifier: abstract
+            -
+              source_paths:
+                - //mods:mods/mods:accessCondition[@type='useAndReproduction']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: rights
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:name
+              transform_callback: "transformAuthor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: contributor
+                    qualifier: author
+            -
+              source_paths:
+                - //mods:mods/mods:name
+              transform_callback: "transformEditor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: contributor
+                    qualifier: editor
+            -
+              source_paths:
+                - //mods:mods/mods:language/mods:languageTerm
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: language
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:location/mods:url
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: url
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='doi']
+              transform_callback: "getStandardizedDoiValue"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: doi
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='uri']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: uri
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='pmc']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: pmc
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='oclc']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: oclc
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='issn']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: issn
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='isbn']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: isbn
+            -
+              source_paths:
+                - //mods:mods/mods:identifier[@type='serial number']
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: identifier
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:titleInfo[not(@type)]/mods:title
+              transform_callback: "transformLiteral"
+              target_file: dc_oaire
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: citation
+                    qualifier: 'title'
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:detail[@type='volume']/mods:number
+              transform_callback: "transformLiteral"
+              target_file: dc_oaire
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: citation
+                    qualifier: 'volume'
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:detail[@type='issue']/mods:number
+              transform_callback: "transformLiteral"
+              target_file: dc_oaire
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: citation
+                    qualifier: 'issue'
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:extent[@unit='page']/mods:start
+              transform_callback: "transformLiteral"
+              target_file: dc_oaire
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: citation
+                    qualifier: 'startPage'
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:extent[@unit='page']/mods:end
+              transform_callback: "transformLiteral"
+              target_file: dc_oaire
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: citation
+                    qualifier: 'endPage'
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:extent[@unit='page']/mods:end
+              transform_callback: "transformLiteral"
+              target_file: dc_oaire
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: citation
+                    qualifier: 'endPage'
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:originInfo/mods:publisher
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: publisher
+                    qualifier: 'none'
+            -
+              source_paths:
+                - //mods:mods/mods:originInfo/mods:dateIssued
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: date
+                    qualifier: issued
+            -
+              source_paths:
+                - //mods:mods/mods:relatedItem[@type='host']/mods:part/mods:date
+              transform_callback: "transformHostDateIfNoModsDate"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: date
+                    qualifier: issued
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:unbfacetInfo/mods:unbDisciplineName
+              transform_callback: "transformLiteral"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: subject
+                    qualifier: 'discipline'
