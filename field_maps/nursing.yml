@@ -316,7 +316,7 @@ isdsbr:
             -
               source_paths:
                 - //mods:mods
-              transform_callback: "literalUndergraduateLevelTransform"
+              transform_callback: "literalMasterLevelTransform"
               target_file: dc_thesis
               target_path:
                 - name: dcvalue

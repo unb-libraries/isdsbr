@@ -47,7 +47,7 @@ trait DegreeNameTransformTrait {
 
   private function literalNursingNameTransform() {
     foreach ($this->targetItemElements as $element) {
-      $this->targetItemValues[] = 'Bachelor of Nursing';
+      $this->targetItemValues[] = 'Master of Nursing';
     }
   }
 
@@ -60,6 +60,12 @@ trait DegreeNameTransformTrait {
   private function literalUndergraduateLevelTransform() {
     foreach ($this->targetItemElements as $element) {
       $this->targetItemValues[] = 'undergraduate';
+    }
+  }
+
+  private function literalMasterLevelTransform() {
+    foreach ($this->targetItemElements as $element) {
+      $this->targetItemValues[] = 'masters';
     }
   }
 
