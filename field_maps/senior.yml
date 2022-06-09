@@ -227,6 +227,16 @@ isdsbr:
                     qualifier: advisor
             -
               source_paths:
+                - //mods:mods/mods:name
+              transform_callback: "transformAdvisor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: contributor
+                    qualifier: advisor
+            -
+              source_paths:
                 - //mods:mods/mods:originInfo/mods:dateIssued
               transform_callback: "transformLiteral"
               target_file: dublin_core
