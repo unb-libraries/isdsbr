@@ -14,7 +14,7 @@ isdsbr:
       label: Honours Theses
       query: q=mods_genre_s:%22Honours+Thesis%22
       field_map: honours
-      target_collection: 123456789/2553
+      target_collection: 123456789/2554
     senior:
       label: Senior Reports
       query: q=mods_genre_s%3A%22Senior+Report%22%0AOR%0Amods_extension_unbfacetInfo_unbCollectionName_s%3A%22Senior+Reports%22%0AOR%0Amods_extension_unbfacetInfo_unbObjectType_s%3A%22Senior+Report%22
