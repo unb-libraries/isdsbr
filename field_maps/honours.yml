@@ -277,8 +277,8 @@ isdsbr:
                     qualifier: 'discipline'
             -
               source_paths:
-                - //mods:mods/mods:extension/etd:degree/etd:nameAbbreviated
-              transform_callback: "degreeNameTransform"
+                - //mods:mods/mods:extension/etd:degree/etd:name
+              transform_callback: "transformLiteral"
               target_file: dc_thesis
               target_path:
                 - name: dcvalue
