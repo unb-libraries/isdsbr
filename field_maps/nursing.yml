@@ -267,14 +267,44 @@ isdsbr:
                     qualifier: 'discipline'
             -
               source_paths:
-                - //mods:mods
-              transform_callback: "literalNursingNameTransform"
+                - //mods:mods/mods:extension/etd:degree/etd:name
+              transform_callback: "degreeNameTransform"
               target_file: dc_thesis
               target_path:
                 - name: dcvalue
                   attributes:
                     element: degree
                     qualifier: 'name'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/etd:degree/etd:name
+              transform_callback: "transformLiteral"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'fullname'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:degree/etd:name
+              transform_callback: "degreeNameTransform"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'name'
+            -
+              source_paths:
+                - //mods:mods/mods:extension/mods:degree/etd:name
+              transform_callback: "transformLiteral"
+              target_file: dc_thesis
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: degree
+                    qualifier: 'fullname'
             -
               source_paths:
                 - //mods:mods/mods:extension/mods:degree/etd:discipline
