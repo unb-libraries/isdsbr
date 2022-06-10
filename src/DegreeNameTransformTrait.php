@@ -34,6 +34,10 @@ trait DegreeNameTransformTrait {
           'MScFE' => 'M.Sc.F.E.',
           'PhD' => 'Ph.D.',
           'PhD IDST' => 'Ph.D.IDST.',
+          'B.Sc.' => 'B.Sc.',
+          'BSc.' => 'B.Sc.',
+          'B.A' => 'B.A.',
+          'BA' => 'B.A.',
         ];
         if (array_key_exists($mods_value, $name_mapping)) {
           $this->targetItemValues[] = $name_mapping[$mods_value];

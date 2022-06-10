@@ -218,6 +218,16 @@ isdsbr:
             -
               source_paths:
                 - //mods:mods/mods:name
+              transform_callback: "transformSeniorAdvisor"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: contributor
+                    qualifier: advisor
+            -
+              source_paths:
+                - //mods:mods/mods:name
               transform_callback: "transformAdvisor"
               target_file: dublin_core
               target_path:
@@ -285,16 +295,6 @@ isdsbr:
                   attributes:
                     element: degree
                     qualifier: 'discipline'
-            -
-              source_paths:
-                - //mods:mods/mods:extension/mods:degree/etd:nameAbbreviated
-              transform_callback: "degreeNameTransform"
-              target_file: dc_thesis
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: degree
-                    qualifier: 'name'
             -
               source_paths:
                 - //mods:mods/mods:name[@type='corporate']
