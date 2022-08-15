@@ -63,8 +63,8 @@ isdsbr:
               target_path:
                 - name: dcvalue
                   attributes:
-                    element: rights
-                    qualifier: 'none'
+                    element: description
+                    qualifier: copyright
             -
               source_paths:
                 - //mods:mods/mods:name
