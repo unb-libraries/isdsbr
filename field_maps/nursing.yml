@@ -184,7 +184,7 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: subject
-                    qualifier: cash
+                    qualifier: csh
             -
               source_paths:
                 - //mods:mods/mods:subject[@authority='local']/mods:topic
