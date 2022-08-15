@@ -167,16 +167,6 @@ isdsbr:
                     qualifier: iso
             -
               source_paths:
-                - //mods:mods/mods:accessCondition[@type='use and reproduction']
-              transform_callback: "transformLiteral"
-              target_file: dublin_core
-              target_path:
-                - name: dcvalue
-                  attributes:
-                    element: rights
-                    qualifier: holder
-            -
-              source_paths:
                 - //mods:mods/mods:subject[@authority='lcsh']/mods:topic
               transform_callback: "transformLiteral"
               target_file: dublin_core
