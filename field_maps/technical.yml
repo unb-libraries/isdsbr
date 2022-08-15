@@ -88,13 +88,13 @@ isdsbr:
             -
               source_paths:
                 - //mods:mods/mods:language/mods:languageTerm
-              transform_callback: "transformLiteral"
+              transform_callback: "transformLanguage"
               target_file: dublin_core
               target_path:
                 - name: dcvalue
                   attributes:
                     element: language
-                    qualifier: 'none'
+                    qualifier: iso
             -
               source_paths:
                 - //mods:mods/mods:location/mods:url
