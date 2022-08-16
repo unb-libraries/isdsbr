@@ -17,6 +17,7 @@ use UnbLibraries\IslandoraDspaceBridge\DoiNormalizationTrait;
 use UnbLibraries\IslandoraDspaceBridge\EditorTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\ElementTransformTrait;
 use UnbLibraries\IslandoraDspaceBridge\LanguageTransformTrait;
+use UnbLibraries\IslandoraDspaceBridge\LiteralCoarAccessTrait;
 use UnbLibraries\IslandoraDspaceBridge\LiteralUnbPublisherTrait;
 use UnbLibraries\IslandoraDspaceBridge\MimeTypeTrait;
 use UnbLibraries\IslandoraDspaceBridge\Robo\Commands\IslandoraDspaceBridgeCommand;
@@ -41,6 +42,7 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
   use EditorTransformTrait;
   use ElementTransformTrait;
   use LanguageTransformTrait;
+  use LiteralCoarAccessTrait;
   use LiteralUnbPublisherTrait;
   use MimeTypeTrait;
   use SubjectTransformTrait;
