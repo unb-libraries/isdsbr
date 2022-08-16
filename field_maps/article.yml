@@ -113,8 +113,8 @@ isdsbr:
               target_path:
                 - name: dcvalue
                   attributes:
-                    element: identifier
-                    qualifier: doi
+                    element: relation
+                    qualifier: hasversion
             -
               source_paths:
                 - //mods:mods/mods:identifier[@type='uri']
