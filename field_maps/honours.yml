@@ -391,3 +391,12 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: type
+            -
+              source_paths:
+                - //mods:mods
+              transform_callback: "getLiteralCoarAccessRestricted"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: rights

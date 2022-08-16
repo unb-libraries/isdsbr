@@ -402,3 +402,12 @@ isdsbr:
                 - name: dcvalue
                   attributes:
                     element: format
+            -
+              source_paths:
+                - //mods:mods
+              transform_callback: "getLiteralCoarAccessOpen"
+              target_file: dublin_core
+              target_path:
+                - name: dcvalue
+                  attributes:
+                    element: rights
