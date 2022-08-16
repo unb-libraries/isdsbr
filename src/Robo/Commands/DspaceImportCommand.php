@@ -38,6 +38,13 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
   protected $dspacePodNamespace;
 
   /**
+   * The DSpace import collection slug.
+   *
+   * @var string
+   */
+  protected $importCollectionSlug;
+
+  /**
    * The DSpace import map file path.
    *
    * @var string
@@ -116,6 +123,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
    */
   protected function dspaceImportItem($import_dir) {
     $this->importPath = $import_dir->getPathname();
+    $this->importCollectionSlug = $import_dir->getBasename();
     $this->initImport();
     $this->validateImportFolder();
     $this->archiveImportFolder();
@@ -141,7 +149,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
     }
     $import_slug = basename($this->importPath);
     $this->dspaceTargetCollectionHandle = file_get_contents($this->importPath . '/' . self::ISDSBR_TARGET_COLLECTION_FILENAME);
-    $this->importZipFileName = "isdsbr_$this->importTimeStamp.zip";
+    $this->importZipFileName = "isdsbr_{$this->importTimeStamp}_{$this->importCollectionSlug}.zip";
     $this->importZipFilePath = self::IMPORT_ZIP_PATH . "/$this->importZipFileName";
     $this->importMapFileName = 'dspace_import_map-' . $this->importTimeStamp . "-$import_slug.txt";
     $this->importLocalMapPath = getcwd() . '/' . self::IMPORT_LOCAL_MAP_PATH;
