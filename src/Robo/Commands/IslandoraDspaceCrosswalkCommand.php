@@ -223,9 +223,10 @@ class IslandoraDspaceCrosswalkCommand extends IslandoraDspaceBridgeCommand {
     foreach ($this->operations as $this->curOperationSourcePath => $operation_paths) {
       $this->addLogTitle("Converting Exported Objects : $this->curOperationSourcePath");
       $this->initCurImportOperation();
+      $item_counter = count($operation_paths);
       foreach ($operation_paths as $this->curOperationItemSourcePath) {
         $this->previouslyImportedItems = [];
-        $this->addLogStrong('Converting ' . $this->curOperationItemSourcePath);
+        $this->addLogStrong('Converting ' . $this->curOperationItemSourcePath . " ($this->targetItemCounter/$item_counter)");
         $this->setTargetItemTargetPath();
         $this->convertAppentModsMetadata();
         foreach ($this->mappingStyle['elements'] as $map_element) {
