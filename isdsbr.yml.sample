@@ -1,48 +1,68 @@
 isdsbr:
   collections:
-    theses:
-      label: Graduate Theses
-      query: q=mods_genre_s%3A%22Thesis+%2F+Dissertation%22%0AOR%0Amods_extension_unbfacetInfo_unbCollectionName_s%3A%22Thesis+%26+Dissertation%22
-      field_map: thesis
-      target_collection: 1882/12778
-    nursing:
-      label: Nursing Synthesis Papers
-      query: q=mods_genre_s:%22Nursing+Synthesis+Paper%22
-      field_map: nursing
-      target_collection: 1882/12777
-    honours:
-      label: Honours Theses
-      query: q=mods_genre_s:%22Honours+Thesis%22
-      field_map: honours
-      target_collection: 1882/12781
-    senior:
-      label: Senior Reports
-      query: q=mods_genre_s%3A%22Senior+Report%22%0AOR%0Amods_extension_unbfacetInfo_unbCollectionName_s%3A%22Senior+Reports%22%0AOR%0Amods_extension_unbfacetInfo_unbObjectType_s%3A%22Senior+Report%22
-      field_map: senior
-      target_collection: 1882/12782
     articles:
       label: Articles
       query: q=mods_genre_s:Article
       field_map: article
       target_collection: 1882/12771
+    books:
+      label: Books
+      query: q=mods_genre_s:Book
+      field_map: book
+      target_collection: 1882/12770
+    bookparts:
+      label: Book Parts
+      query: q=mods_genre_s%3A%22Book%5C%20Chapter%22
+      field_map: bookpart
+      target_collection: 1882/12769
+    honours:
+      label: Honours Theses
+      query: q=mods_genre_s:%22Honours+Thesis%22
+      field_map: honours
+      target_collection: 1882/12781
+    nursing:
+      label: Nursing Synthesis Papers
+      query: q=mods_genre_s:%22Nursing+Synthesis+Paper%22
+      field_map: nursing
+      target_collection: 1882/12777
+    research:
+      label: Research Reports
+      query: q=mods_genre_s:Report
+      field_map: research
+      target_collection: 1882/12773
+    senior:
+      label: Senior Reports
+      query: q=mods_genre_s%3A%22Senior+Report%22%0AOR%0Amods_extension_unbfacetInfo_unbCollectionName_s%3A%22Senior+Reports%22%0AOR%0Amods_extension_unbfacetInfo_unbObjectType_s%3A%22Senior+Report%22
+      field_map: senior
+      target_collection: 1882/12782
     technical:
       label: Technical Reports
-      query: q=mods_genre_s:%22Technical+Report%22
+      query: q=mods_genre_s%3A%22Technical+Report%22
       field_map: technical
       target_collection: 1882/12773
+    theses:
+      label: Graduate Theses
+      query: q=mods_genre_s%3A%22Thesis+%2F+Dissertation%22%0AOR%0Amods_extension_unbfacetInfo_unbCollectionName_s%3A%22Thesis+%26+Dissertation%22
+      field_map: thesis
+      target_collection: 1882/12778
     workp:
       label: Working Papers
       query: q=mods_genre_s:%22Working+Paper%22
       field_map: workp
       target_collection: 1882/12775
+    videos:
+      label: Videos
+      query: q=mods_genre_s:Video
+      field_map: video
+      target_collection: 1882/12774
   fedora:
     admin_pass: xxxxxxxxxx
     admin_user: xxxxxxxxxx
     export_format: info:fedora/fedora-system:ATOMZip-1.1
     fedora_home: /usr/share/fedora
-    hostname: chimera.hil.unb.ca
+    hostname: chimera
     java_home: /usr/lib/jvm/java-7-oracle-amd64
   solr:
-    hostname: chimera.hil.unb.ca
+    hostname: chimera
     core: core1
     uri: http://localhost:8080/solr
