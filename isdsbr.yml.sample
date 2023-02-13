@@ -4,37 +4,37 @@ isdsbr:
       label: Graduate Theses
       query: q=mods_genre_s%3A%22Thesis+%2F+Dissertation%22%0AOR%0Amods_extension_unbfacetInfo_unbCollectionName_s%3A%22Thesis+%26+Dissertation%22
       field_map: thesis
-      target_collection: 123456789/66
+      target_collection: 1882/12778
     nursing:
       label: Nursing Synthesis Papers
       query: q=mods_genre_s:%22Nursing+Synthesis+Paper%22
       field_map: nursing
-      target_collection: 123456789/2553
+      target_collection: 1882/12777
     honours:
       label: Honours Theses
       query: q=mods_genre_s:%22Honours+Thesis%22
       field_map: honours
-      target_collection: 123456789/2554
+      target_collection: 1882/12781
     senior:
       label: Senior Reports
       query: q=mods_genre_s%3A%22Senior+Report%22%0AOR%0Amods_extension_unbfacetInfo_unbCollectionName_s%3A%22Senior+Reports%22%0AOR%0Amods_extension_unbfacetInfo_unbObjectType_s%3A%22Senior+Report%22
       field_map: senior
-      target_collection: 123456789/2555
+      target_collection: 1882/12782
     articles:
       label: Articles
       query: q=mods_genre_s:Article
       field_map: article
-      target_collection: 123456789/67
+      target_collection: 1882/12771
     technical:
       label: Technical Reports
       query: q=mods_genre_s:%22Technical+Report%22
       field_map: technical
-      target_collection: 123456789/2557
+      target_collection: 1882/12773
     workp:
       label: Working Papers
       query: q=mods_genre_s:%22Working+Paper%22
       field_map: workp
-      target_collection: 123456789/2556
+      target_collection: 1882/12775
   fedora:
     admin_pass: xxxxxxxxxx
     admin_user: xxxxxxxxxx
