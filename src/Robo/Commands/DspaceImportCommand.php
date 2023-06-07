@@ -210,7 +210,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
       $this->dspacePodId,
       $this->dspacePodNamespace,
       self::DSPACE_BIN_PATH,
-      $this->dspaceTargetCollectionHandle,
+      trim($this->dspaceTargetCollectionHandle),
       self::DSPACE_ADMIN_USER,
       self::IMPORT_ZIP_PATH,
       $this->importZipFileName,
@@ -230,7 +230,7 @@ class DspaceImportCommand extends IslandoraDspaceBridgeCommand {
       $this->dspacePodId,
       $this->dspacePodNamespace,
       self::DSPACE_BIN_PATH,
-      $this->dspaceTargetCollectionHandle
+      trim($this->dspaceTargetCollectionHandle)
     );
     $this->say($cmd);
     passthru($cmd);
