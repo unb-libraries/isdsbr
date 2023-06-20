@@ -1,0 +1,22 @@
+{
+  "license": "MIT",
+  "name": "unb-libraries/isdsbr-thesis-mapper",
+  "config": {
+    "preferred-install": {
+      "*": "dist"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "ext-json": "*",
+    "php": "^8",
+    "league/csv": "^9"
+  },
+  "authors": [
+    {
+      "name": "Jacob Sanford",
+      "email": "jsanford@unb.ca"
+    }
+  ]
+}
